@@ -30,6 +30,13 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 
     @Override
     public void run() {
+	if(!p.hasMetadata("BlockBeginDestroy"))
+	{
+	    this.cancel();
+	    //((BetterBlockBreaking)plugin).cancelTask(this.getTaskId());
+	    return;
+	}
+	
 	Date old = (Date) p.getMetadata("BlockBeginDestroy").get(0).value();
 	Date now = new Date();
 	long differenceMilliseconds = now.getTime() - old.getTime();
@@ -44,7 +51,9 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 	f += (bukkitBlock.hasMetadata("damage") ? bukkitBlock.getMetadata("damage").get(0).asFloat() : 0);
 	if (f > 10) {
 	    if (bukkitBlock.getType() != org.bukkit.Material.AIR)
-		((BetterBlockBreaking) plugin).BreakBlock(bukkitBlock, world, pos);
+		((BetterBlockBreaking) plugin).BreakBlock(bukkitBlock, world, pos, p);
+	    //((BetterBlockBreaking)plugin).cancelTask(this.getTaskId());
+	    this.cancel();
 	    return;
 	}
 
