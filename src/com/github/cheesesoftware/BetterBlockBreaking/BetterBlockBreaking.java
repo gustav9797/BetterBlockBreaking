@@ -38,8 +38,6 @@ import com.comphenix.protocol.reflect.StructureModifier;
 
 public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
-    // private Random r = new Random();
-    // private static float breakModifier = 0.5f;
     private static int blockDamageUpdateDelay = 20 * 20; // seconds * ticks
     private ProtocolManager protocolManager;
 
@@ -65,30 +63,22 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		    BlockPosition pos = dataTemp.getValues().get(0);
 
 		    if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
+
 			p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
 			if (p.hasMetadata("currentDamageTaskId"))
 			    Bukkit.getScheduler().cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
 			BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new ShowCurrentBlockDamageTask(plugin, p, pos), 0, 2);
 			p.setMetadata("currentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
-			// Bukkit.getServer().getPlayer("gustav9797").sendMessage("start");
 		    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
+
 			if (p.hasMetadata("currentDamageTaskId"))
 			    Bukkit.getScheduler().cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
 			Date old = (Date) p.getMetadata("BlockBeginDestroy").get(0).value();
 			Date now = new Date();
 			long differenceMilliseconds = now.getTime() - old.getTime();
-			// p.setMetadata("BlockAbortTime", new
-			// FixedMetadataValue(plugin, differenceMilliseconds));
 			p.removeMetadata("BlockBeginDestroy", plugin);
 			((BetterBlockBreaking) plugin).SetBlockDamage(p, pos, differenceMilliseconds);
-			// Bukkit.getServer().getPlayer("gustav9797").sendMessage("abort");
 		    }
-		    /*
-		     * else if (type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
-		     * Bukkit
-		     * .getServer().getPlayer("gustav9797").sendMessage("stop");
-		     * }
-		     */
 		}
 	    }
 	});
@@ -103,12 +93,10 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	EntityPlayer player = ((CraftPlayer) damager).getHandle();
 	net.minecraft.server.v1_8_R1.Block block = world.getType(pos).getBlock();
 
-	float i = totalMilliseconds / 20; // Server ticks passed since block
-					  // started breaking
+	float i = totalMilliseconds / 20; // Magic value
 
 	float f = 1000 * ((block.getDamage(player, world, pos) * (float) (i)) / 240);
 	damageBlock(damager, new Location(damager.getWorld(), pos.getX(), pos.getY(), pos.getZ()).getBlock(), f);
-	// damager.sendMessage("Somerandomfloat: " + f);
     }
 
     @EventHandler
@@ -136,8 +124,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	    Bukkit.getScheduler().cancelTask(updateBlockDamageTaskId);
 	}
 
-	// block.getWorld().playSound(block.getLocation(), Sound.ZOMBIE_WOOD,
-	// 1.0f, 1.0f);
+	// block.getWorld().playSound(block.getLocation(), Sound.ZOMBIE_WOOD, 1.0f, 1.0f);
 	if (block.hasMetadata("monster")) {
 	    UUID monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
 	    Entity toRemove = world.getEntity(monsterUUID);
@@ -149,7 +136,6 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		toRemove.die();
 	}
 
-	// Clean metadata
 	block.removeMetadata("damage", this);
 	block.removeMetadata("monster", this);
 	block.removeMetadata("monsterId", this);
@@ -175,8 +161,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		}
 
 		if (!block.hasMetadata("updateBlockDamageTaskId")) {
-		    BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, new ShowBlockDamageTask(this, block), blockDamageUpdateDelay,
-			    blockDamageUpdateDelay);
+		    BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, new ShowBlockDamageTask(this, block), blockDamageUpdateDelay, blockDamageUpdateDelay);
 		    int updateBlockDamageTaskId = task.getTaskId();
 		    block.setMetadata("updateBlockDamageTaskId", new FixedMetadataValue(this, updateBlockDamageTaskId));
 		}
@@ -189,94 +174,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	    } else {
 		BreakBlock(block, world, pos);
 	    }
-	    // float damageIncrease = 20.0f;
-	    // float totalBlockStrength = 10;
-
-	    // try {
-	    // Field f =
-	    // net.minecraft.server.v1_8_R1.Block.class.getDeclaredField("durability");
-	    // f.setAccessible(true);
-	    // totalBlockStrength = f.getFloat(world.getType(pos).getBlock());
-	    // damageIncrease = (240 / totalBlockStrength) * breakModifier *
-	    // getToolDamageModifierForBlock(tool, block.getType());
-	    // } catch (Exception e) {
-	    // e.printStackTrace();
-	    // }
-
-	    // p.sendMessage("totalBlockStrength: " + totalBlockStrength + //
-	    // " damageIncrease: " + damageIncrease);
-
-	    // int updateBlockDamageTaskId = -1;
-
-	    // if (!block.hasMetadata("damage")) {
-	    // block.setMetadata("damage", new FixedMetadataValue(this, 0));
-
-	    // Entity monster = new EntityChicken(world);
-	    // world.addEntity(monster, SpawnReason.CUSTOM);
-	    // block.setMetadata("monster", new FixedMetadataValue(this,
-	    // monster.getUniqueID()));
-	    // block.setMetadata("monsterId", new FixedMetadataValue(this,
-	    // monster.getId()));
-	    //
-	    // BukkitTask task = Bukkit.getScheduler()
-	    // .runTaskTimer(this, new ShowBlockDamageTask(this, block),
-	    // blockDamageUpdateDelay, blockDamageUpdateDelay);
-	    // updateBlockDamageTaskId = task.getTaskId();
-	    // block.setMetadata("updateBlockDamageTaskId", new
-	    // FixedMetadataValue(this, updateBlockDamageTaskId));
-	    // }
-	    // float currentDamage =
-	    // block.getMetadata("damage").get(0).asFloat();
-	    // int monsterId = block.getMetadata("monsterId").get(0).asInt();
-	    // currentDamage += damageIncrease;
-
-	    // world.triggerEffect(2001, pos, block.getTypeId());
-	    // block.getWorld().playEffect(block.getLocation(), Effect., data);
-
-	    // if (currentDamage >= 240 || currentDamage == 0) {
-	    // if (updateBlockDamageTaskId == -1)
-	    // updateBlockDamageTaskId =
-	    // block.getMetadata("updateBlockDamageTaskId").get(0).asInt();
-	    // Bukkit.getScheduler().cancelTask(updateBlockDamageTaskId);
-
-	    // block.getWorld().playSound(block.getLocation(), //
-	    // Sound.ZOMBIE_WOOD,
-	    // 1.0f, 1.0f);
-	    // world.triggerEffect(1012, pos, 0);
-	    // block.breakNaturally();
-	    // UUID monsterUUID = (UUID)
-	    // block.getMetadata("monster").get(0).value();
-	    // Entity toRemove = world.getEntity(monsterUUID);
-	    // ((CraftServer)
-	    // getServer()).getHandle().sendPacketNearby(block.getX(),
-	    // block.getY(), block.getZ(), 120, world.dimension,
-	    // new PacketPlayOutBlockBreakAnimation(monsterId, pos, -1));
-	    // if (toRemove != null)
-	    // toRemove.die();
-	    // block.removeMetadata("damage", this);
-	    // block.removeMetadata("monster", this);
-	    // block.removeMetadata("monsterId", this);
-	    // block.removeMetadata("updateBlockDamageTaskId", this);
-	    // } else { //
-	    // block.getWorld().playSound(block.getLocation(),
-	    // Sound.ZOMBIE_WOODBREAK, 1.0f, 1.0f);
-	    // world.triggerEffect(1010, pos, 0);
-
-	    // block.setMetadata("damage", new FixedMetadataValue(this,
-	    // currentDamage));
-
-	    // int i = (int) ((float) currentDamage / 240.0f * 10.0F);
-	    // ((CraftServer)
-	    // getServer()).getHandle().sendPacketNearby(block.getX(),
-	    // block.getY(), block.getZ(), 120, world.dimension,
-	    // // new PacketPlayOutBlockBreakAnimation(monsterId, pos, i));
-	    // }
 	}
     }
-
-    // private float getToolDamageModifierForBlock(ItemStack tool, Material
-    // material) {
-    // return 1.0f;
-    // }
 
 }
