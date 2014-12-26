@@ -39,16 +39,12 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 	net.minecraft.server.v1_8_R1.Block block = world.getType(pos).getBlock();
 	Block bukkitBlock = p.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
 
-	float i = differenceMilliseconds / 20; // Server ticks passed since
-					       // block started breaking
+	float i = differenceMilliseconds / 20;
 	float f = 1000 * ((block.getDamage(player, world, pos) * (float) (i)) / 240);
 	f += (bukkitBlock.hasMetadata("damage") ? bukkitBlock.getMetadata("damage").get(0).asFloat() : 0);
-	if(f > 10)
-	{
-	    if(bukkitBlock.getType() != org.bukkit.Material.AIR)
-		((BetterBlockBreaking)plugin).BreakBlock(bukkitBlock, world, pos);
-	    //Bukkit.getScheduler().cancelTask(this.getTaskId());
-	    //this.cancel();
+	if (f > 10) {
+	    if (bukkitBlock.getType() != org.bukkit.Material.AIR)
+		((BetterBlockBreaking) plugin).BreakBlock(bukkitBlock, world, pos);
 	    return;
 	}
 

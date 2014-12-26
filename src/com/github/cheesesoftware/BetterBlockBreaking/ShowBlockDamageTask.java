@@ -27,19 +27,12 @@ public class ShowBlockDamageTask extends BukkitRunnable {
     @Override
     public void run() {
 	float currentDamage = block.getMetadata("damage").get(0).asFloat();
-	// int i = (int) ((float) currentDamage / 240.0f * 10.0F);
 	if (block.hasMetadata("monsterId")) {
 	    int monsterId = block.getMetadata("monsterId").get(0).asInt();
 
-	    int dimension = world.dimension;
-	    // ((CraftServer)
-	    // plugin.getServer()).getHandle().sendPacketNearby(block.getX(),
-	    // block.getY(), block.getZ(), 120, dimension,
-	    // new PacketPlayOutBlockBreakAnimation(monsterId, pos, 0));
-	    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, dimension,
+	    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
 		    new PacketPlayOutBlockBreakAnimation(monsterId, pos, (int) currentDamage));
-	}
-	else
+	} else
 	    this.cancel();
     }
 
