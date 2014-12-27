@@ -13,7 +13,7 @@
         <pathelement location="../../../.m2/repository/org/spigotmc/spigot-api/1.8-R0.1-SNAPSHOT/spigot-api-1.8-R0.1-SNAPSHOT.jar"/>
         <pathelement location="../../../.m2/repository/org/bukkit/bukkit/1.8-R0.1-SNAPSHOT/bukkit-1.8-R0.1-SNAPSHOT.jar"/>
         <pathelement location="../../../.m2/repository/org/bukkit/craftbukkit/1.8-R0.1-SNAPSHOT/craftbukkit-1.8-R0.1-SNAPSHOT.jar"/>
-        <pathelement location="../../../.m2/repository/com/comphenix/protocol/ProtocolLib/3.6.3-SNAPSHOT/ProtocolLib-3.6.3-SNAPSHOT.jar"/>
+        <pathelement location="../../../.m2/repository/com/comphenix/protocol/ProtocolLib-Spigot/3.6.0-SNAPSHOT/ProtocolLib-Spigot-3.6.0-SNAPSHOT.jar"/>
         <pathelement location="../../../.m2/repository/cglib/cglib-nodep/2.2.2/cglib-nodep-2.2.2.jar"/>
         <pathelement location="../../../.m2/repository/com/comphenix/executors/BukkitExecutors/1.0.0/BukkitExecutors-1.0.0.jar"/>
     </path>
