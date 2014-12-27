@@ -15,7 +15,6 @@ import net.minecraft.server.v1_8_R1.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_8_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R1.CraftWorld;
@@ -42,37 +41,27 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     private static int blockDamageUpdateDelay = 20 * 20; // seconds * ticks
     private ProtocolManager protocolManager;
-    //private Queue<Integer> tasksToKill = new LinkedList<Integer>();
+    // private Queue<Integer> tasksToKill = new LinkedList<Integer>();
     private int taskKillerTaskId = -1;
 
-    //@SuppressWarnings("deprecation")
+    // @SuppressWarnings("deprecation")
     public void onEnable() {
 	Bukkit.getServer().getPluginManager().registerEvents(this, this);
 	/*
-	BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, new BukkitRunnable() {
+	 * BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, new BukkitRunnable() {
+	 * 
+	 * @Override public void run() {
+	 * 
+	 * while(tasksToKill.size() > 0) { int current = tasksToKill.poll(); // if(Bukkit.getScheduler().isCurrentlyRunning(current) || Bukkit.getScheduler().isQueued(current)) {
+	 * Bukkit.getScheduler().cancelTask(current); } //else //tasksToKill.add(current); } }}, 0, 20*5); this.taskKillerTaskId = task.getTaskId();
+	 */
 
-	    @Override
-	    public void run() {
-		
-		while(tasksToKill.size() > 0)
-		{
-		    int current = tasksToKill.poll();
-		   // if(Bukkit.getScheduler().isCurrentlyRunning(current) || Bukkit.getScheduler().isQueued(current))
-		    {
-			Bukkit.getScheduler().cancelTask(current);
-		    }
-		    //else
-			//tasksToKill.add(current);
-		}
-	    }}, 0, 20*5);
-	this.taskKillerTaskId = task.getTaskId();*/
-	
     }
 
     public void onLoad() {
 	protocolManager = ProtocolLibrary.getProtocolManager();
 	protocolManager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.BLOCK_DIG) {
-	    //@SuppressWarnings("deprecation")
+	    // @SuppressWarnings("deprecation")
 	    @Override
 	    public void onPacketReceiving(PacketEvent event) {
 		if (event.getPacketType() == PacketType.Play.Client.BLOCK_DIG) {
@@ -89,16 +78,16 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
 			p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
 			if (p.hasMetadata("currentDamageTaskId"))
-			    //((BetterBlockBreaking)plugin).cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
+			    // ((BetterBlockBreaking)plugin).cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
 			    Bukkit.getScheduler().cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
-			//BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new ShowCurrentBlockDamageTask(plugin, p, pos), 0, 2);
+			// BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new ShowCurrentBlockDamageTask(plugin, p, pos), 0, 2);
 			BukkitTask task = new ShowCurrentBlockDamageTask(plugin, p, pos).runTaskTimer(plugin, 0, 2);
 			p.setMetadata("currentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
 		    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
 
 			if (p.hasMetadata("currentDamageTaskId")) {
 			    Bukkit.getScheduler().cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
-			    //((BetterBlockBreaking)plugin).cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
+			    // ((BetterBlockBreaking)plugin).cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
 			    p.removeMetadata("currentDamageTaskId", plugin);
 			}
 			Date old = (Date) p.getMetadata("BlockBeginDestroy").get(0).value();
@@ -116,11 +105,10 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     public void onDisable() {
 	Bukkit.getScheduler().cancelTask(this.taskKillerTaskId);
     }
-    
-    /*public void cancelTask(int task)
-    {
-	this.tasksToKill.add(task);
-    }*/
+
+    /*
+     * public void cancelTask(int task) { this.tasksToKill.add(task); }
+     */
 
     public void SetBlockDamage(Player damager, BlockPosition pos, long totalMilliseconds) {
 	WorldServer world = ((CraftWorld) damager.getWorld()).getHandle();
@@ -141,12 +129,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	    BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
 	    cleanBlock(block, world, pos);
 	    event.setCancelled(true);
-	    BreakBlock(event.getBlock(), world, pos, event.getPlayer());
+	    BreakBlock(event.getBlock(), world, pos, event.getPlayer(), false);
 	}
     }
 
-    public void BreakBlock(Block block, WorldServer world, BlockPosition pos, Player player) {
-	if (block.getType() != org.bukkit.Material.AIR) {
+    public void BreakBlock(Block block, WorldServer world, BlockPosition pos, Player player, boolean playSound) {
+	if (block.getType() != org.bukkit.Material.AIR && !block.hasMetadata("processing")) {
 	    block.setMetadata("processing", new FixedMetadataValue(this, true));
 	    BlockBreakEvent event = new BlockBreakEvent(block, player);
 	    Bukkit.getServer().getPluginManager().callEvent(event);
@@ -161,9 +149,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		}
 	    } else {
 		cleanBlock(block, world, pos);
-		block.getWorld().playSound(block.getLocation(), Sound.ZOMBIE_WOODBREAK, 2.0f, 1.0f);
+		if (playSound) {
+		    String sound = world.getType(pos).getBlock().stepSound.getBreakSound();
+		    world.makeSound(pos.getX(), pos.getY(), pos.getZ(), sound, 2.0f, 1.0f);
+		}
 		// world.triggerEffect(1012, pos, 0);
-		
+
 		((CraftPlayer) player).getHandle().playerInteractManager.breakBlock(pos);
 	    }
 	    block.removeMetadata("processing", this);
@@ -174,7 +165,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	if (block.hasMetadata("updateBlockDamageTaskId")) {
 	    int updateBlockDamageTaskId = block.getMetadata("updateBlockDamageTaskId").get(0).asInt();
 	    Bukkit.getScheduler().cancelTask(updateBlockDamageTaskId);
-	    //this.cancelTask(updateBlockDamageTaskId);
+	    // this.cancelTask(updateBlockDamageTaskId);
 	}
 
 	// block.getWorld().playSound(block.getLocation(), Sound.ZOMBIE_WOOD, 1.0f, 1.0f);
@@ -225,7 +216,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		((CraftServer) getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
 			new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, (int) damage));
 	    } else {
-		BreakBlock(block, world, pos, p);
+		BreakBlock(block, world, pos, p, true);
 	    }
 	}
     }
