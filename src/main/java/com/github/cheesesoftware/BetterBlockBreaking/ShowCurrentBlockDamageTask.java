@@ -55,6 +55,7 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 	    } else {
 		bukkitBlock.setMetadata("damage", new FixedMetadataValue(plugin, f));
 		p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
+		((BetterBlockBreaking)plugin).updateBlockInfo(bukkitBlock.getLocation(), f);
 	    }
 
 	    if (bukkitBlock.hasMetadata("monsterId")) {
@@ -74,7 +75,7 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 		// Start the task which prevents block damage from disappearing
 		BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, bukkitBlock).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
 			BetterBlockBreaking.blockDamageUpdateDelay);
-		p.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(plugin, aliveTask.getTaskId()));
+		bukkitBlock.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(plugin, aliveTask.getTaskId()));
 	    }
 	} else
 	    this.cancel();
