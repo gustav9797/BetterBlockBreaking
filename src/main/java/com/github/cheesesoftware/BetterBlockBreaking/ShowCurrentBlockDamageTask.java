@@ -15,7 +15,9 @@ import org.bukkit.craftbukkit.v1_8_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 
@@ -31,42 +33,48 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 
     @Override
     public void run() {
-	if(!p.hasMetadata("BlockBeginDestroy"))
-	{
+	if (p.hasMetadata("BlockBeginDestroy")) {
+	    Date old = (Date) p.getMetadata("BlockBeginDestroy").get(0).value();
+	    Date now = new Date();
+	    long differenceMilliseconds = now.getTime() - old.getTime();
+
+	    WorldServer world = ((CraftWorld) p.getWorld()).getHandle();
+	    EntityPlayer player = ((CraftPlayer) p).getHandle();
+	    net.minecraft.server.v1_8_R1.Block block = world.getType(pos).getBlock();
+	    Block bukkitBlock = p.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
+
+	    float i = differenceMilliseconds / 20;
+	    float f = 1000 * ((block.getDamage(player, world, pos) * (float) (i)) / 240);
+	    f += (bukkitBlock.hasMetadata("damage") ? bukkitBlock.getMetadata("damage").get(0).asFloat() : 0);
+	    if (f > 10) {
+		if (bukkitBlock.getType() != org.bukkit.Material.AIR && !bukkitBlock.hasMetadata("processing"))
+		    ((BetterBlockBreaking) plugin).BreakBlock(bukkitBlock, world, pos, p, true);
+		// ((BetterBlockBreaking)plugin).cancelTask(this.getTaskId());
+		this.cancel();
+		return;
+	    } else {
+		bukkitBlock.setMetadata("damage", new FixedMetadataValue(plugin, f));
+		p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
+	    }
+
+	    if (bukkitBlock.hasMetadata("monsterId")) {
+		// Send damage packet
+		((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(bukkitBlock.getX(), bukkitBlock.getY(), bukkitBlock.getZ(), 120, world.dimension,
+			new PacketPlayOutBlockBreakAnimation(bukkitBlock.getMetadata("monsterId").get(0).asInt(), pos, (int) f));
+
+		// Cancel old task
+		if (bukkitBlock.hasMetadata("keepBlockDamageAliveTaskId")) {
+		    int keepBlockDamageAliveTaskId = bukkitBlock.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt();
+		    Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
+		}
+
+		// Start the task which prevents block damage from disappearing
+		BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, bukkitBlock).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
+			BetterBlockBreaking.blockDamageUpdateDelay);
+		p.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(plugin, aliveTask.getTaskId()));
+	    }
+	} else
 	    this.cancel();
-	    //((BetterBlockBreaking)plugin).cancelTask(this.getTaskId());
-	    return;
-	}
-	
-	Date old = (Date) p.getMetadata("BlockBeginDestroy").get(0).value();
-	Date now = new Date();
-	long differenceMilliseconds = now.getTime() - old.getTime();
-
-	WorldServer world = ((CraftWorld) p.getWorld()).getHandle();
-	EntityPlayer player = ((CraftPlayer) p).getHandle();
-	net.minecraft.server.v1_8_R1.Block block = world.getType(pos).getBlock();
-	Block bukkitBlock = p.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
-
-	float i = differenceMilliseconds / 20;
-	float f = 1000 * ((block.getDamage(player, world, pos) * (float) (i)) / 240);
-	f += (bukkitBlock.hasMetadata("damage") ? bukkitBlock.getMetadata("damage").get(0).asFloat() : 0);
-	if (f > 10) {
-	    if (bukkitBlock.getType() != org.bukkit.Material.AIR && !bukkitBlock.hasMetadata("processing"))
-		((BetterBlockBreaking) plugin).BreakBlock(bukkitBlock, world, pos, p, true);
-	    //((BetterBlockBreaking)plugin).cancelTask(this.getTaskId());
-	    this.cancel();
-	    return;
-	}
-	else
-	{
-	    bukkitBlock.setMetadata("damage", new FixedMetadataValue(plugin, f));
-	    p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
-	}
-
-	if (bukkitBlock.hasMetadata("monsterId")) {
-	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(bukkitBlock.getX(), bukkitBlock.getY(), bukkitBlock.getZ(), 120, world.dimension,
-		    new PacketPlayOutBlockBreakAnimation(bukkitBlock.getMetadata("monsterId").get(0).asInt(), pos, (int) f));
-	}
     }
 
 }
