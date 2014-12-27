@@ -1,6 +1,7 @@
 package com.github.cheesesoftware.BetterBlockBreaking;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.UUID;
 
 import net.minecraft.server.v1_8_R1.BlockPosition;
@@ -40,11 +41,18 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     public static int blockDamageUpdateDelay = 20 * 20; // seconds * ticks
     private ProtocolManager protocolManager;
-    private int taskKillerTaskId = -1;
+    private int removeOldDamagesBlocksTaskId = -1;
+    
+    public HashMap<Location, Float> damagedBlocks = new HashMap<Location, Float>();
+    public HashMap<Location, Date> lastDamagedBlocks = new HashMap<Location, Date>();
 
     public void onEnable() {
 	Bukkit.getServer().getPluginManager().registerEvents(this, this);
+	
+	BukkitTask task = new RemoveOldDamagedBlocksTask(this).runTaskTimer(this, 0, 20);
+	this.removeOldDamagesBlocksTaskId = task.getTaskId();
     }
+	
 
     public void onLoad() {
 	protocolManager = ProtocolLibrary.getProtocolManager();
@@ -151,7 +159,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     }
 
     public void onDisable() {
-	Bukkit.getScheduler().cancelTask(this.taskKillerTaskId);
+	Bukkit.getScheduler().cancelTask(this.removeOldDamagesBlocksTaskId);
     }
 
     @EventHandler
@@ -161,11 +169,11 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	    WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
 	    BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
 	    event.setCancelled(true);
-	    BreakBlock(event.getBlock(), world, pos, event.getPlayer(), false);
+	    breakBlock(event.getBlock(), world, pos, event.getPlayer(), false);
 	}
     }
 
-    public void BreakBlock(Block block, WorldServer world, BlockPosition pos, Player player, boolean playSound) {
+    public void breakBlock(Block block, WorldServer world, BlockPosition pos, Player player, boolean playSound) {
 	// Don't break block if it's currently being processed
 	if (block.getType() != org.bukkit.Material.AIR && !block.hasMetadata("processing")) {
 	    block.setMetadata("processing", new FixedMetadataValue(this, true));
@@ -203,7 +211,13 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	}
     }
 
-    private void cleanBlock(Block block, WorldServer world, BlockPosition pos) {
+    public void updateBlockInfo(Location l, float damage) {
+	Date dateModified = new Date();
+	this.damagedBlocks.put(l, damage);
+	this.lastDamagedBlocks.put(l, dateModified);
+    }
+
+    public void cleanBlock(Block block, WorldServer world, BlockPosition pos) {
 
 	// Clean task
 	if (block.hasMetadata("showCurrentDamageTaskId")) {

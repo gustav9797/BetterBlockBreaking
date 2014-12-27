@@ -48,7 +48,7 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 	    f += (bukkitBlock.hasMetadata("damage") ? bukkitBlock.getMetadata("damage").get(0).asFloat() : 0);
 	    if (f > 10) {
 		if (bukkitBlock.getType() != org.bukkit.Material.AIR && !bukkitBlock.hasMetadata("processing"))
-		    ((BetterBlockBreaking) plugin).BreakBlock(bukkitBlock, world, pos, p, true);
+		    ((BetterBlockBreaking) plugin).breakBlock(bukkitBlock, world, pos, p, true);
 		// ((BetterBlockBreaking)plugin).cancelTask(this.getTaskId());
 		this.cancel();
 		return;
