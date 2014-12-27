@@ -15,7 +15,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class RemoveOldDamagedBlocksTask extends BukkitRunnable {
 
     private final BetterBlockBreaking plugin;
-    private static long millisecondsForBlockRemove = 10000;
+    private static long millisecondsForBlockRemove = 1000 * 120;
 
     public RemoveOldDamagedBlocksTask(BetterBlockBreaking plugin) {
 	this.plugin = plugin;
