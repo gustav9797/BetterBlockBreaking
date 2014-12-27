@@ -72,7 +72,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	protocolManager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.BLOCK_DIG) {
 	    @Override
 	    public void onPacketReceiving(PacketEvent event) {
-		if (event.getPacketType() == PacketType.Play.Client.BLOCK_DIG) {
+		if (event.getPacketType() == PacketType.Play.Client.BLOCK_DIG && !event.isAsync()) {
 		    PacketContainer packet = event.getPacket();
 		    StructureModifier<EnumPlayerDigType> data = packet.getSpecificModifier(EnumPlayerDigType.class);
 		    StructureModifier<BlockPosition> dataTemp = packet.getSpecificModifier(BlockPosition.class);
