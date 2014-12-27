@@ -95,7 +95,41 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
 
 		    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
+
 			// Player cancelled breaking
+			if (block.hasMetadata("isNoCancel") && block.hasMetadata("damage")) {
+
+			    // Load block "monster", used for displaying the damage on the block
+			    UUID monsterUUID;
+			    int monsterId;
+			    if (!block.hasMetadata("monster")) {
+				Entity monster = new EntityChicken(world);
+				world.addEntity(monster, SpawnReason.CUSTOM);
+				monsterUUID = monster.getUniqueID();
+				monsterId = monster.getId();
+				block.setMetadata("monster", new FixedMetadataValue(plugin, monsterUUID));
+				block.setMetadata("monsterId", new FixedMetadataValue(plugin, monsterId));
+			    } else {
+				monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
+				monsterId = block.getMetadata("monsterId").get(0).asInt();
+			    }
+
+			    // If it's a first time break and player stops breaking, send damage packet
+			    float currentDamage = block.getMetadata("damage").get(0).asFloat();
+			    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
+				    new PacketPlayOutBlockBreakAnimation(monsterId, pos, (int) currentDamage));
+
+			    // Cancel old keep-damage-alive task
+			    if (block.hasMetadata("keepBlockDamageAliveTaskId")) {
+				int keepBlockDamageAliveTaskId = block.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt();
+				Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
+			    }
+
+			    // Start the task which prevents block damage from disappearing
+			    BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, block).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
+				    BetterBlockBreaking.blockDamageUpdateDelay);
+			    p.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(plugin, aliveTask.getTaskId()));
+			}
 			block.removeMetadata("isNoCancel", plugin);
 
 			// Clean old tasks
