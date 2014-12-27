@@ -214,16 +214,16 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     }
 
     public void cleanBlock(Block block, WorldServer world, BlockPosition pos) {
-	// Send a damage packet to remove the damage of the block
-	if (block.hasMetadata("monsterId")) {
-	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
-		    new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, -1));
-	}
-
 	// Clean task
 	if (block.hasMetadata("showCurrentDamageTaskId")) {
 	    int updateBlockDamageTaskId = block.getMetadata("showCurrentDamageTaskId").get(0).asInt();
 	    Bukkit.getScheduler().cancelTask(updateBlockDamageTaskId);
+	}
+	
+	// Send a damage packet to remove the damage of the block
+	if (block.hasMetadata("monsterId")) {
+	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
+		    new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, -1));
 	}
 
 	// Clean monster, remove if exists
