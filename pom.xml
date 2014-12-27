@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>BetterBlockBreaking</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.4-SNAPSHOT</version>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <resources>
