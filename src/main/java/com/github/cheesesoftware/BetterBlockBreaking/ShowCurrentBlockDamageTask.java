@@ -58,7 +58,10 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 	    return;
 	}
 	else
+	{
 	    bukkitBlock.setMetadata("damage", new FixedMetadataValue(plugin, f));
+	    p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
+	}
 
 	if (bukkitBlock.hasMetadata("monsterId")) {
 	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(bukkitBlock.getX(), bukkitBlock.getY(), bukkitBlock.getZ(), 120, world.dimension,
