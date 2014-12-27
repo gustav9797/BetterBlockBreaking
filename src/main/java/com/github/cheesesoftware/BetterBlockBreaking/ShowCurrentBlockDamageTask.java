@@ -13,6 +13,7 @@ import org.bukkit.craftbukkit.v1_8_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -56,6 +57,8 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 	    this.cancel();
 	    return;
 	}
+	else
+	    bukkitBlock.setMetadata("damage", new FixedMetadataValue(plugin, f));
 
 	if (bukkitBlock.hasMetadata("monsterId")) {
 	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(bukkitBlock.getX(), bukkitBlock.getY(), bukkitBlock.getZ(), 120, world.dimension,
