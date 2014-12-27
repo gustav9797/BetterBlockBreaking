@@ -42,17 +42,16 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     public static int blockDamageUpdateDelay = 20 * 20; // seconds * ticks
     private ProtocolManager protocolManager;
     private int removeOldDamagesBlocksTaskId = -1;
-    
+
     public HashMap<Location, Float> damagedBlocks = new HashMap<Location, Float>();
     public HashMap<Location, Date> lastDamagedBlocks = new HashMap<Location, Date>();
 
     public void onEnable() {
 	Bukkit.getServer().getPluginManager().registerEvents(this, this);
-	
+
 	BukkitTask task = new RemoveOldDamagedBlocksTask(this).runTaskTimer(this, 0, 20);
 	this.removeOldDamagesBlocksTaskId = task.getTaskId();
     }
-	
 
     public void onLoad() {
 	protocolManager = ProtocolLibrary.getProtocolManager();
@@ -190,11 +189,8 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		if (tileentity != null) {
 		    ((CraftPlayer) player).getHandle().playerConnection.sendPacket(tileentity.getUpdatePacket());
 		}
-		// Send a damage packet to remove the damage of the block
-		if (block.hasMetadata("monsterId")) {
-		    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
-			    new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, -1));
-		}
+
+		this.cleanBlock(block, world, pos);
 	    } else {
 		cleanBlock(block, world, pos);
 
@@ -218,6 +214,11 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     }
 
     public void cleanBlock(Block block, WorldServer world, BlockPosition pos) {
+	// Send a damage packet to remove the damage of the block
+	if (block.hasMetadata("monsterId")) {
+	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
+		    new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, -1));
+	}
 
 	// Clean task
 	if (block.hasMetadata("showCurrentDamageTaskId")) {
