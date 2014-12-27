@@ -135,7 +135,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			    // Start the task which prevents block damage from disappearing
 			    BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, block).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
 				    BetterBlockBreaking.blockDamageUpdateDelay);
-			    p.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(plugin, aliveTask.getTaskId()));
+			    block.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(plugin, aliveTask.getTaskId()));
 			}
 			block.removeMetadata("isNoCancel", plugin);
 
@@ -143,10 +143,6 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			if (p.hasMetadata("showCurrentDamageTaskId")) {
 			    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
 			    p.removeMetadata("showCurrentDamageTaskId", plugin);
-			}
-			if (p.hasMetadata("keepBlockDamageAliveTaskId")) {
-			    Bukkit.getScheduler().cancelTask(p.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt());
-			    p.removeMetadata("keepBlockDamageAliveTaskId", plugin);
 			}
 
 			// Clean metadata
@@ -214,12 +210,16 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     }
 
     public void cleanBlock(Block block, WorldServer world, BlockPosition pos) {
-	// Clean task
+	// Clean tasks
 	if (block.hasMetadata("showCurrentDamageTaskId")) {
 	    int updateBlockDamageTaskId = block.getMetadata("showCurrentDamageTaskId").get(0).asInt();
 	    Bukkit.getScheduler().cancelTask(updateBlockDamageTaskId);
 	}
-	
+	if (block.hasMetadata("keepBlockDamageAliveTaskId")) {
+	    int keepBlockDamageAliveTaskId = block.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt();
+	    Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
+	}
+
 	// Send a damage packet to remove the damage of the block
 	if (block.hasMetadata("monsterId")) {
 	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
