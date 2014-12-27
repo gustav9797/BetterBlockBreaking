@@ -73,29 +73,55 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		    EnumPlayerDigType type = data.getValues().get(0);
 		    Player p = event.getPlayer();
 		    BlockPosition pos = dataTemp.getValues().get(0);
+		    Location posLocation = new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ());
+		    Block block = posLocation.getBlock();
+		    WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
 
 		    if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
-
+			
+			// Clean old task
 			p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
-			if (p.hasMetadata("currentDamageTaskId"))
-			    // ((BetterBlockBreaking)plugin).cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
-			    Bukkit.getScheduler().cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
-			// BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new ShowCurrentBlockDamageTask(plugin, p, pos), 0, 2);
+			if (p.hasMetadata("showCurrentDamageTaskId"))
+			    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+
+			// Load block "monster", used for displaying the damage on the block
+			UUID monsterUUID;
+			int monsterId;
+			if (!block.hasMetadata("monster")) {
+			    Entity monster = new EntityChicken(world);
+			    world.addEntity(monster, SpawnReason.CUSTOM);
+			    monsterUUID = monster.getUniqueID();
+			    monsterId = monster.getId();
+			    block.setMetadata("monster", new FixedMetadataValue(plugin, monsterUUID));
+			    block.setMetadata("monsterId", new FixedMetadataValue(plugin, monsterId));
+			}
+			else
+			{
+			    monsterUUID = (UUID)block.getMetadata("monster").get(0).value();
+			    monsterId = block.getMetadata("monsterId").get(0).asInt();
+			}
+
+			// Start new task
 			BukkitTask task = new ShowCurrentBlockDamageTask(plugin, p, pos).runTaskTimer(plugin, 0, 2);
-			p.setMetadata("currentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
+			p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
+			
 		    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
 
-			if (p.hasMetadata("currentDamageTaskId")) {
-			    Bukkit.getScheduler().cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
+			// Clean old task
+			if (p.hasMetadata("showCurrentDamageTaskId")) {
+			    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
 			    // ((BetterBlockBreaking)plugin).cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
-			    p.removeMetadata("currentDamageTaskId", plugin);
+			    p.removeMetadata("showCurrentDamageTaskId", plugin);
 			}
-			Date old = (Date) p.getMetadata("BlockBeginDestroy").get(0).value();
-			Date now = new Date();
-			long differenceMilliseconds = now.getTime() - old.getTime();
+			
+			//Clean metadata
 			p.removeMetadata("BlockBeginDestroy", plugin);
-			//if (differenceMilliseconds > 150 || (new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ()).getBlock().hasMetadata("damage")))
-			  //  ((BetterBlockBreaking) plugin).SetBlockDamage(p, pos, differenceMilliseconds);
+			
+			//Date old = (Date) p.getMetadata("BlockBeginDestroy").get(0).value();
+			//Date now = new Date();
+			//long differenceMilliseconds = now.getTime() - old.getTime();
+			// if (differenceMilliseconds > 150 || (new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ()).getBlock().hasMetadata("damage")))
+			// ((BetterBlockBreaking) plugin).SetBlockDamage(p, pos, differenceMilliseconds);
 		    }
 		}
 	    }
@@ -110,16 +136,14 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
      * public void cancelTask(int task) { this.tasksToKill.add(task); }
      */
 
-    /*public void SetBlockDamage(Player damager, BlockPosition pos, long totalMilliseconds) {
-	WorldServer world = ((CraftWorld) damager.getWorld()).getHandle();
-	EntityPlayer player = ((CraftPlayer) damager).getHandle();
-	net.minecraft.server.v1_8_R1.Block block = world.getType(pos).getBlock();
-
-	float i = totalMilliseconds / 20; // Magic value
-
-	float f = 1000 * ((block.getDamage(player, world, pos) * (float) (i)) / 240);
-	damageBlock(damager, new Location(damager.getWorld(), pos.getX(), pos.getY(), pos.getZ()).getBlock(), f);
-    }*/
+    /*
+     * public void SetBlockDamage(Player damager, BlockPosition pos, long totalMilliseconds) { WorldServer world = ((CraftWorld) damager.getWorld()).getHandle(); EntityPlayer player = ((CraftPlayer)
+     * damager).getHandle(); net.minecraft.server.v1_8_R1.Block block = world.getType(pos).getBlock();
+     * 
+     * float i = totalMilliseconds / 20; // Magic value
+     * 
+     * float f = 1000 * ((block.getDamage(player, world, pos) * (float) (i)) / 240); damageBlock(damager, new Location(damager.getWorld(), pos.getX(), pos.getY(), pos.getZ()).getBlock(), f); }
+     */
 
     @EventHandler
     public void onPlayerDestroyBlock(BlockBreakEvent event) {
@@ -162,8 +186,8 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     }
 
     private void cleanBlock(Block block, WorldServer world, BlockPosition pos) {
-	if (block.hasMetadata("updateBlockDamageTaskId")) {
-	    int updateBlockDamageTaskId = block.getMetadata("updateBlockDamageTaskId").get(0).asInt();
+	if (block.hasMetadata("showCurrentDamageTaskId")) {
+	    int updateBlockDamageTaskId = block.getMetadata("showCurrentDamageTaskId").get(0).asInt();
 	    Bukkit.getScheduler().cancelTask(updateBlockDamageTaskId);
 	    // this.cancelTask(updateBlockDamageTaskId);
 	}
@@ -183,42 +207,27 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	block.removeMetadata("damage", this);
 	block.removeMetadata("monster", this);
 	block.removeMetadata("monsterId", this);
-	block.removeMetadata("updateBlockDamageTaskId", this);
+	block.removeMetadata("showCurrentDamageTaskId", this);
     }
 
-   /* @SuppressWarnings({ "deprecation" })
-    private void damageBlock(Player p, Block block, float amount) {
-	if (block != null) {
-	    WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
-	    BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
-
-	    float damage = (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0);
-	    damage += amount;
-	    if (damage < 10) {
-		block.setMetadata("damage", new FixedMetadataValue(this, damage));
-
-		if (!block.hasMetadata("monster")) {
-		    Entity monster = new EntityChicken(world);
-		    world.addEntity(monster, SpawnReason.CUSTOM);
-		    block.setMetadata("monster", new FixedMetadataValue(this, monster.getUniqueID()));
-		    block.setMetadata("monsterId", new FixedMetadataValue(this, monster.getId()));
-		}
-
-		if (!block.hasMetadata("updateBlockDamageTaskId")) {
-		    BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, new ShowBlockDamageTask(this, block), blockDamageUpdateDelay, blockDamageUpdateDelay);
-		    int updateBlockDamageTaskId = task.getTaskId();
-		    block.setMetadata("updateBlockDamageTaskId", new FixedMetadataValue(this, updateBlockDamageTaskId));
-		}
-
-		((CraftServer) getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
-			new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, -1));
-
-		((CraftServer) getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
-			new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, (int) damage));
-	    } else {
-		BreakBlock(block, world, pos, p, true);
-	    }
-	}
-    }*/
+    /*
+     * @SuppressWarnings({ "deprecation" }) private void damageBlock(Player p, Block block, float amount) { if (block != null) { WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
+     * BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
+     * 
+     * float damage = (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0); damage += amount; if (damage < 10) { block.setMetadata("damage", new FixedMetadataValue(this,
+     * damage));
+     * 
+     * if (!block.hasMetadata("monster")) { Entity monster = new EntityChicken(world); world.addEntity(monster, SpawnReason.CUSTOM); block.setMetadata("monster", new FixedMetadataValue(this,
+     * monster.getUniqueID())); block.setMetadata("monsterId", new FixedMetadataValue(this, monster.getId())); }
+     * 
+     * if (!block.hasMetadata("updateBlockDamageTaskId")) { BukkitTask task = Bukkit.getScheduler().runTaskTimer(this, new ShowBlockDamageTask(this, block), blockDamageUpdateDelay,
+     * blockDamageUpdateDelay); int updateBlockDamageTaskId = task.getTaskId(); block.setMetadata("updateBlockDamageTaskId", new FixedMetadataValue(this, updateBlockDamageTaskId)); }
+     * 
+     * ((CraftServer) getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension, new
+     * PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, -1));
+     * 
+     * ((CraftServer) getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension, new
+     * PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, (int) damage)); } else { BreakBlock(block, world, pos, p, true); } } }
+     */
 
 }
