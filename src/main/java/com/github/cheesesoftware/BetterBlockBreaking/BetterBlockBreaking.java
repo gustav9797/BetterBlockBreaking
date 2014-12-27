@@ -86,17 +86,26 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			    monsterId = block.getMetadata("monsterId").get(0).asInt();
 			}
 
+			// Set metadata to prevent duplicate animations on the same block when player doesn't stop breaking
+			if (!block.hasMetadata("damage"))
+			    block.setMetadata("isNoCancel", new FixedMetadataValue(plugin, true));
+
 			// Start new task
 			BukkitTask task = new ShowCurrentBlockDamageTask(plugin, p, pos).runTaskTimer(plugin, 0, 2);
 			p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
 
 		    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
+			// Player cancelled breaking
+			block.removeMetadata("isNoCancel", plugin);
 
-			// Clean old task
+			// Clean old tasks
 			if (p.hasMetadata("showCurrentDamageTaskId")) {
 			    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
-			    // ((BetterBlockBreaking)plugin).cancelTask(p.getMetadata("currentDamageTaskId").get(0).asInt());
 			    p.removeMetadata("showCurrentDamageTaskId", plugin);
+			}
+			if (p.hasMetadata("keepBlockDamageAliveTaskId")) {
+			    Bukkit.getScheduler().cancelTask(p.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt());
+			    p.removeMetadata("keepBlockDamageAliveTaskId", plugin);
 			}
 
 			// Clean metadata
@@ -186,5 +195,6 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	block.removeMetadata("monsterId", this);
 	block.removeMetadata("showCurrentDamageTaskId", this);
 	block.removeMetadata("keepBlockDamageAliveTaskId", this);
+	block.removeMetadata("isNoCancel", this);
     }
 }

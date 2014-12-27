@@ -58,9 +58,12 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 	    }
 
 	    if (bukkitBlock.hasMetadata("monsterId")) {
-		// Send damage packet
-		((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(bukkitBlock.getX(), bukkitBlock.getY(), bukkitBlock.getZ(), 120, world.dimension,
-			new PacketPlayOutBlockBreakAnimation(bukkitBlock.getMetadata("monsterId").get(0).asInt(), pos, (int) f));
+
+		if (!bukkitBlock.hasMetadata("isNoCancel")) {
+		    // Send damage packet
+		    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(bukkitBlock.getX(), bukkitBlock.getY(), bukkitBlock.getZ(), 120, world.dimension,
+			    new PacketPlayOutBlockBreakAnimation(bukkitBlock.getMetadata("monsterId").get(0).asInt(), pos, (int) f));
+		}
 
 		// Cancel old task
 		if (bukkitBlock.hasMetadata("keepBlockDamageAliveTaskId")) {
