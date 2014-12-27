@@ -1,8 +1,14 @@
 package com.github.cheesesoftware.BetterBlockBreaking;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.logging.Level;
 
 import net.minecraft.server.v1_8_R1.BlockPosition;
 import net.minecraft.server.v1_8_R1.Entity;
@@ -16,6 +22,8 @@ import net.minecraft.server.v1_8_R1.WorldServer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_8_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R1.entity.CraftPlayer;
@@ -43,10 +51,16 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     private ProtocolManager protocolManager;
     private int removeOldDamagesBlocksTaskId = -1;
 
+    private FileConfiguration customConfig = null;
+    private File customConfigFile = null;
+
     public HashMap<Location, Float> damagedBlocks = new HashMap<Location, Float>();
     public HashMap<Location, Date> lastDamagedBlocks = new HashMap<Location, Date>();
 
     public void onEnable() {
+	this.saveDefaultConfig();
+	this.reloadCustomConfig();
+	
 	Bukkit.getServer().getPluginManager().registerEvents(this, this);
 
 	BukkitTask task = new RemoveOldDamagedBlocksTask(this).runTaskTimer(this, 0, 20);
@@ -155,6 +169,54 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     public void onDisable() {
 	Bukkit.getScheduler().cancelTask(this.removeOldDamagesBlocksTaskId);
+    }
+
+    public void reloadCustomConfig() {
+	if (customConfigFile == null) {
+	    customConfigFile = new File(getDataFolder(), "config.yml");
+	}
+	customConfig = YamlConfiguration.loadConfiguration(customConfigFile);
+	RemoveOldDamagedBlocksTask.millisecondsForBlockRemove = customConfig.getLong("blockDamageRemovalTimeout");
+	Bukkit.getLogger().log(Level.INFO, "Loaded block damage timeout: " + RemoveOldDamagedBlocksTask.millisecondsForBlockRemove);
+
+	// Look for defaults in the jar
+	Reader defConfigStream;
+	try {
+	    defConfigStream = new InputStreamReader(this.getResource("config.yml"), "UTF8");
+	    if (defConfigStream != null) {
+		YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
+		customConfig.setDefaults(defConfig);
+	    }
+	} catch (UnsupportedEncodingException e) {
+	    e.printStackTrace();
+	}
+    }
+
+    public FileConfiguration getCustomConfig() {
+	if (customConfig == null) {
+	    reloadCustomConfig();
+	}
+	return customConfig;
+    }
+
+    public void saveCustomConfig() {
+	if (customConfig == null || customConfigFile == null) {
+	    return;
+	}
+	try {
+	    getCustomConfig().save(customConfigFile);
+	} catch (IOException ex) {
+	    getLogger().log(Level.SEVERE, "Could not save config to " + customConfigFile, ex);
+	}
+    }
+
+    public void saveDefaultConfig() {
+	if (customConfigFile == null) {
+	    customConfigFile = new File(getDataFolder(), "config.yml");
+	}
+	if (!customConfigFile.exists()) {
+	    this.saveResource("config.yml", false);
+	}
     }
 
     @EventHandler

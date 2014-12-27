@@ -1,0 +1,4 @@
+# default config.yml
+
+# Time in milliseconds for damaged blocks to become normal
+blockDamageRemovalTimeout: 120000
