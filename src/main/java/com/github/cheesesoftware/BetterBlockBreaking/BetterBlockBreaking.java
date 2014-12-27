@@ -94,8 +94,8 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			Date now = new Date();
 			long differenceMilliseconds = now.getTime() - old.getTime();
 			p.removeMetadata("BlockBeginDestroy", plugin);
-			if (differenceMilliseconds > 150 || (new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ()).getBlock().hasMetadata("damage")))
-			    ((BetterBlockBreaking) plugin).SetBlockDamage(p, pos, differenceMilliseconds);
+			//if (differenceMilliseconds > 150 || (new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ()).getBlock().hasMetadata("damage")))
+			  //  ((BetterBlockBreaking) plugin).SetBlockDamage(p, pos, differenceMilliseconds);
 		    }
 		}
 	    }
@@ -110,7 +110,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
      * public void cancelTask(int task) { this.tasksToKill.add(task); }
      */
 
-    public void SetBlockDamage(Player damager, BlockPosition pos, long totalMilliseconds) {
+    /*public void SetBlockDamage(Player damager, BlockPosition pos, long totalMilliseconds) {
 	WorldServer world = ((CraftWorld) damager.getWorld()).getHandle();
 	EntityPlayer player = ((CraftPlayer) damager).getHandle();
 	net.minecraft.server.v1_8_R1.Block block = world.getType(pos).getBlock();
@@ -119,7 +119,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
 	float f = 1000 * ((block.getDamage(player, world, pos) * (float) (i)) / 240);
 	damageBlock(damager, new Location(damager.getWorld(), pos.getX(), pos.getY(), pos.getZ()).getBlock(), f);
-    }
+    }*/
 
     @EventHandler
     public void onPlayerDestroyBlock(BlockBreakEvent event) {
@@ -186,7 +186,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	block.removeMetadata("updateBlockDamageTaskId", this);
     }
 
-    @SuppressWarnings({ "deprecation" })
+   /* @SuppressWarnings({ "deprecation" })
     private void damageBlock(Player p, Block block, float amount) {
 	if (block != null) {
 	    WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
@@ -219,6 +219,6 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		BreakBlock(block, world, pos, p, true);
 	    }
 	}
-    }
+    }*/
 
 }
