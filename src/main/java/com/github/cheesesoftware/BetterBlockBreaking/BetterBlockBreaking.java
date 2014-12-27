@@ -34,6 +34,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import com.comphenix.protocol.PacketType;
@@ -60,7 +61,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     public void onEnable() {
 	this.saveDefaultConfig();
 	this.reloadCustomConfig();
-	
+
 	Bukkit.getServer().getPluginManager().registerEvents(this, this);
 
 	BukkitTask task = new RemoveOldDamagedBlocksTask(this).runTaskTimer(this, 0, 20);
@@ -71,96 +72,104 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	protocolManager = ProtocolLibrary.getProtocolManager();
 	protocolManager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.BLOCK_DIG) {
 	    @Override
-	    public void onPacketReceiving(PacketEvent event) {
-		if (event.getPacketType() == PacketType.Play.Client.BLOCK_DIG && !event.isAsync()) {
-		    PacketContainer packet = event.getPacket();
-		    StructureModifier<EnumPlayerDigType> data = packet.getSpecificModifier(EnumPlayerDigType.class);
-		    StructureModifier<BlockPosition> dataTemp = packet.getSpecificModifier(BlockPosition.class);
+	    public void onPacketReceiving(PacketEvent e) {
+		if (e.getPacketType() == PacketType.Play.Client.BLOCK_DIG) {
+		    final PacketContainer packet = e.getPacket();
+		    final PacketEvent event = e;
+		    BukkitRunnable runnable = new BukkitRunnable() {
 
-		    EnumPlayerDigType type = data.getValues().get(0);
-		    Player p = event.getPlayer();
-		    BlockPosition pos = dataTemp.getValues().get(0);
-		    Location posLocation = new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ());
-		    Block block = posLocation.getBlock();
-		    WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
+			@Override
+			public void run() {
+			    StructureModifier<EnumPlayerDigType> data = packet.getSpecificModifier(EnumPlayerDigType.class);
+			    StructureModifier<BlockPosition> dataTemp = packet.getSpecificModifier(BlockPosition.class);
 
-		    if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
+			    EnumPlayerDigType type = data.getValues().get(0);
+			    Player p = event.getPlayer();
+			    BlockPosition pos = dataTemp.getValues().get(0);
+			    Location posLocation = new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ());
+			    Block block = posLocation.getBlock();
+			    WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
 
-			// Clean old task
-			p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
-			if (p.hasMetadata("showCurrentDamageTaskId"))
-			    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+			    if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
 
-			// Load block "monster", used for displaying the damage on the block
-			UUID monsterUUID;
-			int monsterId;
-			if (!block.hasMetadata("monster")) {
-			    Entity monster = new EntityChicken(world);
-			    world.addEntity(monster, SpawnReason.CUSTOM);
-			    monsterUUID = monster.getUniqueID();
-			    monsterId = monster.getId();
-			    block.setMetadata("monster", new FixedMetadataValue(plugin, monsterUUID));
-			    block.setMetadata("monsterId", new FixedMetadataValue(plugin, monsterId));
-			} else {
-			    monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
-			    monsterId = block.getMetadata("monsterId").get(0).asInt();
-			}
+				// Clean old task
+				p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
+				if (p.hasMetadata("showCurrentDamageTaskId"))
+				    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
 
-			// Set metadata to prevent duplicate animations on the same block when player doesn't stop breaking
-			if (!block.hasMetadata("damage"))
-			    block.setMetadata("isNoCancel", new FixedMetadataValue(plugin, true));
+				// Load block "monster", used for displaying the damage on the block
+				UUID monsterUUID;
+				int monsterId;
+				if (!block.hasMetadata("monster")) {
+				    Entity monster = new EntityChicken(world);
+				    world.addEntity(monster, SpawnReason.CUSTOM);
+				    monsterUUID = monster.getUniqueID();
+				    monsterId = monster.getId();
+				    block.setMetadata("monster", new FixedMetadataValue(plugin, monsterUUID));
+				    block.setMetadata("monsterId", new FixedMetadataValue(plugin, monsterId));
+				} else {
+				    monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
+				    monsterId = block.getMetadata("monsterId").get(0).asInt();
+				}
 
-			// Start new task
-			BukkitTask task = new ShowCurrentBlockDamageTask(plugin, p, pos).runTaskTimer(plugin, 0, 2);
-			p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
+				// Set metadata to prevent duplicate animations on the same block when player doesn't stop breaking
+				if (!block.hasMetadata("damage"))
+				    block.setMetadata("isNoCancel", new FixedMetadataValue(plugin, true));
 
-		    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
+				// Start new task
+				BukkitTask task = new ShowCurrentBlockDamageTask(plugin, p, pos).runTaskTimer(plugin, 0, 2);
+				p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
 
-			// Player cancelled breaking
-			if (block.hasMetadata("isNoCancel") && block.hasMetadata("damage")) {
+			    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
 
-			    // Load block "monster", used for displaying the damage on the block
-			    UUID monsterUUID;
-			    int monsterId;
-			    if (!block.hasMetadata("monster")) {
-				Entity monster = new EntityChicken(world);
-				world.addEntity(monster, SpawnReason.CUSTOM);
-				monsterUUID = monster.getUniqueID();
-				monsterId = monster.getId();
-				block.setMetadata("monster", new FixedMetadataValue(plugin, monsterUUID));
-				block.setMetadata("monsterId", new FixedMetadataValue(plugin, monsterId));
-			    } else {
-				monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
-				monsterId = block.getMetadata("monsterId").get(0).asInt();
+				// Player cancelled breaking
+				if (block.hasMetadata("isNoCancel") && block.hasMetadata("damage")) {
+
+				    // Load block "monster", used for displaying the damage on the block
+				    UUID monsterUUID;
+				    int monsterId;
+				    if (!block.hasMetadata("monster")) {
+					Entity monster = new EntityChicken(world);
+					world.addEntity(monster, SpawnReason.CUSTOM);
+					monsterUUID = monster.getUniqueID();
+					monsterId = monster.getId();
+					block.setMetadata("monster", new FixedMetadataValue(plugin, monsterUUID));
+					block.setMetadata("monsterId", new FixedMetadataValue(plugin, monsterId));
+				    } else {
+					monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
+					monsterId = block.getMetadata("monsterId").get(0).asInt();
+				    }
+
+				    // If it's a first time break and player stops breaking, send damage packet
+				    float currentDamage = block.getMetadata("damage").get(0).asFloat();
+				    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
+					    new PacketPlayOutBlockBreakAnimation(monsterId, pos, (int) currentDamage));
+
+				    // Cancel old keep-damage-alive task
+				    if (block.hasMetadata("keepBlockDamageAliveTaskId")) {
+					int keepBlockDamageAliveTaskId = block.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt();
+					Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
+				    }
+
+				    // Start the task which prevents block damage from disappearing
+				    BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, block).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
+					    BetterBlockBreaking.blockDamageUpdateDelay);
+				    block.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(plugin, aliveTask.getTaskId()));
+				}
+				block.removeMetadata("isNoCancel", plugin);
+
+				// Clean old tasks
+				if (p.hasMetadata("showCurrentDamageTaskId")) {
+				    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+				    p.removeMetadata("showCurrentDamageTaskId", plugin);
+				}
+
+				// Clean metadata
+				p.removeMetadata("BlockBeginDestroy", plugin);
 			    }
-
-			    // If it's a first time break and player stops breaking, send damage packet
-			    float currentDamage = block.getMetadata("damage").get(0).asFloat();
-			    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
-				    new PacketPlayOutBlockBreakAnimation(monsterId, pos, (int) currentDamage));
-
-			    // Cancel old keep-damage-alive task
-			    if (block.hasMetadata("keepBlockDamageAliveTaskId")) {
-				int keepBlockDamageAliveTaskId = block.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt();
-				Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
-			    }
-
-			    // Start the task which prevents block damage from disappearing
-			    BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, block).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
-				    BetterBlockBreaking.blockDamageUpdateDelay);
-			    block.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(plugin, aliveTask.getTaskId()));
-			}
-			block.removeMetadata("isNoCancel", plugin);
-
-			// Clean old tasks
-			if (p.hasMetadata("showCurrentDamageTaskId")) {
-			    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
-			    p.removeMetadata("showCurrentDamageTaskId", plugin);
-			}
-
-			// Clean metadata
-			p.removeMetadata("BlockBeginDestroy", plugin);
-		    }
+			};
+		    };
+		    runnable.runTaskLater(plugin, 0);
 		}
 	    }
 	});
