@@ -7,6 +7,7 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -21,6 +22,7 @@ import net.minecraft.server.v1_8_R1.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -32,6 +34,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -236,6 +239,67 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	    event.setCancelled(true);
 	    breakBlock(event.getBlock(), world, pos, event.getPlayer(), false);
 	}
+    }
+
+    @EventHandler
+    public void onEntityExplode(EntityExplodeEvent event) {
+	List<Block> blocks = event.blockList();
+	Location explosion = event.getLocation();
+
+	for (Block block : blocks) {
+	    double distance = explosion.distance(block.getLocation());
+	    block.setType(block.getType());
+	    this.setBlockDamage(block, (float) distance);
+	}
+    }
+
+    // API function, other plugins can set block damage
+    public void setBlockDamage(Block block, float percentage) {
+
+	WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
+	BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
+	net.minecraft.server.v1_8_R1.Block nmsBlock = world.getType(pos).getBlock();
+
+	float f = 1000 * ((nmsBlock.getDamage(null, world, pos) * (float) (percentage)) / 240);
+	if (f > 10) {
+	    if (block.getType() != org.bukkit.Material.AIR) {
+		cleanBlock(block, world, pos);
+		block.setType(Material.AIR);
+	    }
+	    return;
+	} else {
+	    block.setMetadata("damage", new FixedMetadataValue(this, f));
+	    ((BetterBlockBreaking) this).updateBlockInfo(block.getLocation(), f);
+	}
+
+	// Load block "monster", used for displaying the damage on the block
+	UUID monsterUUID;
+	int monsterId;
+	if (!block.hasMetadata("monster")) {
+	    Entity monster = new EntityChicken(world);
+	    world.addEntity(monster, SpawnReason.CUSTOM);
+	    monsterUUID = monster.getUniqueID();
+	    monsterId = monster.getId();
+	    block.setMetadata("monster", new FixedMetadataValue(this, monsterUUID));
+	    block.setMetadata("monsterId", new FixedMetadataValue(this, monsterId));
+	} else {
+	    monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
+	    monsterId = block.getMetadata("monsterId").get(0).asInt();
+	}
+
+	// Send damage packet
+	((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
+		new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, (int) f));
+
+	// Cancel old task
+	if (block.hasMetadata("keepBlockDamageAliveTaskId")) {
+	    int keepBlockDamageAliveTaskId = block.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt();
+	    Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
+	}
+
+	// Start the task which prevents block damage from disappearing
+	BukkitTask aliveTask = new KeepBlockDamageAliveTask(this, block).runTaskTimer(this, BetterBlockBreaking.blockDamageUpdateDelay, BetterBlockBreaking.blockDamageUpdateDelay);
+	block.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(this, aliveTask.getTaskId()));
     }
 
     public void breakBlock(Block block, WorldServer world, BlockPosition pos, Player player, boolean playSound) {
