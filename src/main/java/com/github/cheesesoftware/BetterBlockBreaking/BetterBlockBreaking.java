@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -257,11 +258,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
 	    @Override
 	    public void run() {
+		Random r = new Random();
 		if (!e.isCancelled()) {
 		    for (Block block : blocks) {
 			double distance = explosion.distance(block.getLocation());
 			block.setType(materials.get(block.getLocation()));
-			plugin.setBlockDamage(block, (float) (8 * (1 / distance)));
+			plugin.setBlockDamage(block, ((float) (r.nextInt(12) * (1 / distance))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
 		    }
 		}
 	    }
