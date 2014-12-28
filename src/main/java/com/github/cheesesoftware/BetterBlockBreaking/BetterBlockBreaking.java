@@ -249,7 +249,6 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	final Location explosion = event.getLocation();
 	final BetterBlockBreaking plugin = this;
 	final EntityExplodeEvent e = event;
-
 	final Map<Location, Material> materials = new HashMap<Location, Material>();
 	for (Block block : blocks)
 	    materials.put(block.getLocation(), block.getType());
@@ -265,7 +264,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			Material m = materials.get(block.getLocation());
 			if (m != Material.TNT) {
 			    block.setType(m);
-			    plugin.setBlockDamage(block, ((float) (r.nextInt(14) * (1 / distance))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
+			    plugin.setBlockDamage(block, ((float) (8 + r.nextInt(4) * (1 / (distance + 1)))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
 			}
 		    }
 		}
