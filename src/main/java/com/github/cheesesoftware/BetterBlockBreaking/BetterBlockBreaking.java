@@ -247,6 +247,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	final List<Block> blocks = event.blockList();
 	final Location explosion = event.getLocation();
 	final BetterBlockBreaking plugin = this;
+	final EntityExplodeEvent e = event;
 
 	final Map<Location, Material> materials = new HashMap<Location, Material>();
 	for (Block block : blocks)
@@ -256,10 +257,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
 	    @Override
 	    public void run() {
-		for (Block block : blocks) {
-		    double distance = explosion.distance(block.getLocation());
-		    block.setType(materials.get(block.getLocation()));
-		    plugin.setBlockDamage(block, (float) distance);
+		if (!e.isCancelled()) {
+		    for (Block block : blocks) {
+			double distance = explosion.distance(block.getLocation());
+			block.setType(materials.get(block.getLocation()));
+			plugin.setBlockDamage(block, (float) (8 * (1 / distance)));
+		    }
 		}
 	    }
 	};
@@ -271,9 +274,9 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
 	WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
 	BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
-	net.minecraft.server.v1_8_R1.Block nmsBlock = world.getType(pos).getBlock();
+	//net.minecraft.server.v1_8_R1.Block nmsBlock = world.getType(pos).getBlock();
 
-	float f = 1000 * ((nmsBlock.g(world, pos) * (float) (1 / percentage)) / 240);
+	float f = percentage / 10;
 	if (f > 10) {
 	    if (block.getType() != org.bukkit.Material.AIR) {
 		cleanBlock(block, world, pos);
