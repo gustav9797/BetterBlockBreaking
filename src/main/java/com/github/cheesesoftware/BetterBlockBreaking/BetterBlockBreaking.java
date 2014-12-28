@@ -276,7 +276,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
 	//net.minecraft.server.v1_8_R1.Block nmsBlock = world.getType(pos).getBlock();
 
-	float f = percentage / 10;
+	float f = percentage * 2.4f;
 	if (f > 10) {
 	    if (block.getType() != org.bukkit.Material.AIR) {
 		cleanBlock(block, world, pos);
