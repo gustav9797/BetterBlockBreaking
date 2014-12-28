@@ -235,91 +235,13 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerDestroyBlock(BlockBreakEvent event) {
 	Block block = event.getBlock();
-	if (!block.hasMetadata("processing")) {
-	    WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
-	    BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
-	    event.setCancelled(true);
-	    breakBlock(event.getBlock(), world, pos, event.getPlayer(), false);
-	}
-    }
-
-    @EventHandler
-    public void onEntityExplode(EntityExplodeEvent event) {
-	final List<Block> blocks = event.blockList();
-	final Location explosion = event.getLocation();
-	final BetterBlockBreaking plugin = this;
-	final EntityExplodeEvent e = event;
-	final Map<Location, Material> materials = new HashMap<Location, Material>();
-	for (Block block : blocks)
-	    materials.put(block.getLocation(), block.getType());
-
-	BukkitRunnable runnable = new BukkitRunnable() {
-
-	    @Override
-	    public void run() {
-		Random r = new Random();
-		if (!e.isCancelled()) {
-		    for (Block block : blocks) {
-			double distance = explosion.distance(block.getLocation());
-			Material m = materials.get(block.getLocation());
-			if (m != Material.TNT) {
-			    block.setType(m);
-			    plugin.setBlockDamage(block, ((float) (1 + r.nextInt(4) * (1 / (distance + 0.001f)))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
-			}
-		    }
-		}
-	    }
-	};
-	runnable.runTaskLater(this, 1);
-    }
-
-    // API function, other plugins can set block damage
-    public void setBlockDamage(Block block, float percentage) {
-
+	// if (!block.hasMetadata("processing")) {
 	WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
 	BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
-	// net.minecraft.server.v1_8_R1.Block nmsBlock = world.getType(pos).getBlock();
-
-	float f = percentage * 2.4f;
-	if (f > 10) {
-	    if (block.getType() != org.bukkit.Material.AIR) {
-		cleanBlock(block, world, pos);
-		block.setType(Material.AIR);
-	    }
-	    return;
-	} else {
-	    block.setMetadata("damage", new FixedMetadataValue(this, f));
-	    ((BetterBlockBreaking) this).updateBlockInfo(block.getLocation(), f);
-	}
-
-	// Load block "monster", used for displaying the damage on the block
-	UUID monsterUUID;
-	int monsterId;
-	if (!block.hasMetadata("monster")) {
-	    Entity monster = new EntityChicken(world);
-	    world.addEntity(monster, SpawnReason.CUSTOM);
-	    monsterUUID = monster.getUniqueID();
-	    monsterId = monster.getId();
-	    block.setMetadata("monster", new FixedMetadataValue(this, monsterUUID));
-	    block.setMetadata("monsterId", new FixedMetadataValue(this, monsterId));
-	} else {
-	    monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
-	    monsterId = block.getMetadata("monsterId").get(0).asInt();
-	}
-
-	// Send damage packet
-	((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
-		new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, (int) f));
-
-	// Cancel old task
-	if (block.hasMetadata("keepBlockDamageAliveTaskId")) {
-	    int keepBlockDamageAliveTaskId = block.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt();
-	    Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
-	}
-
-	// Start the task which prevents block damage from disappearing
-	BukkitTask aliveTask = new KeepBlockDamageAliveTask(this, block).runTaskTimer(this, BetterBlockBreaking.blockDamageUpdateDelay, BetterBlockBreaking.blockDamageUpdateDelay);
-	block.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(this, aliveTask.getTaskId()));
+	this.cleanBlock(block, world, pos);
+	// event.setCancelled(true);
+	// breakBlock(event.getBlock(), world, pos, event.getPlayer(), false);
+	// }
     }
 
     public void breakBlock(Block block, WorldServer world, BlockPosition pos, Player player, boolean playSound) {
@@ -399,5 +321,92 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	block.removeMetadata("showCurrentDamageTaskId", this);
 	block.removeMetadata("keepBlockDamageAliveTaskId", this);
 	block.removeMetadata("isNoCancel", this);
+    }
+
+    @EventHandler
+    public void onEntityExplode(EntityExplodeEvent event) {
+	final List<Block> blocks = event.blockList();
+	final Location explosion = event.getLocation();
+	final BetterBlockBreaking plugin = this;
+	final EntityExplodeEvent e = event;
+	final Map<Location, Material> materials = new HashMap<Location, Material>();
+	for (Block block : blocks)
+	    materials.put(block.getLocation(), block.getType());
+	event.setYield(0);
+
+	BukkitRunnable runnable = new BukkitRunnable() {
+
+	    @Override
+	    public void run() {
+		Random r = new Random();
+		if (!e.isCancelled()) {
+		    for (Block block : blocks) {
+			double distance = explosion.distance(block.getLocation());
+			Material m = materials.get(block.getLocation());
+			if (m != Material.TNT) {
+			    block.setType(m);
+			    // plugin.setBlockDamage(block, ((float) (2 + r.nextInt(4) * (1 / (distance)))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
+			    plugin.setBlockDamage(block, (float) ((14 + (r.nextInt(5) - 2) - (2.0f * distance)) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0)));
+			}
+		    }
+		}
+	    }
+	};
+	runnable.runTaskLater(this, 0);
+    }
+
+    // API function, other plugins can set block damage
+    public void setBlockDamage(Block block, float damage) {
+
+	WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
+	BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
+	// net.minecraft.server.v1_8_R1.Block nmsBlock = world.getType(pos).getBlock();
+
+	if (damage < 0)
+	    damage = 0;
+
+	Bukkit.getServer().getPlayer("gustav9797").sendMessage("damage " + damage);
+	if (damage > 10) {
+	    if (block.getType() != org.bukkit.Material.AIR) {
+		cleanBlock(block, world, pos);
+		block.setType(Material.AIR);
+	    }
+	    return;
+	} else {
+	    if (damage == 0)
+		damage = -1;
+
+	    block.setMetadata("damage", new FixedMetadataValue(this, damage));
+	    ((BetterBlockBreaking) this).updateBlockInfo(block.getLocation(), damage);
+
+	    // Load block "monster", used for displaying the damage on the block
+	    UUID monsterUUID;
+	    int monsterId;
+	    if (!block.hasMetadata("monster")) {
+		Entity monster = new EntityChicken(world);
+		world.addEntity(monster, SpawnReason.CUSTOM);
+		monsterUUID = monster.getUniqueID();
+		monsterId = monster.getId();
+		block.setMetadata("monster", new FixedMetadataValue(this, monsterUUID));
+		block.setMetadata("monsterId", new FixedMetadataValue(this, monsterId));
+	    } else {
+		monsterUUID = (UUID) block.getMetadata("monster").get(0).value();
+		monsterId = block.getMetadata("monsterId").get(0).asInt();
+	    }
+
+	    // Send damage packet
+	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
+		    new PacketPlayOutBlockBreakAnimation(block.getMetadata("monsterId").get(0).asInt(), pos, (int) damage));
+
+	    // Cancel old task
+	    if (block.hasMetadata("keepBlockDamageAliveTaskId")) {
+		int keepBlockDamageAliveTaskId = block.getMetadata("keepBlockDamageAliveTaskId").get(0).asInt();
+		Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
+	    }
+
+	    // Start the task which prevents block damage from disappearing
+	    BukkitTask aliveTask = new KeepBlockDamageAliveTask(this, block).runTaskTimer(this, BetterBlockBreaking.blockDamageUpdateDelay, BetterBlockBreaking.blockDamageUpdateDelay);
+	    block.setMetadata("keepBlockDamageAliveTaskId", new FixedMetadataValue(this, aliveTask.getTaskId()));
+	}
     }
 }

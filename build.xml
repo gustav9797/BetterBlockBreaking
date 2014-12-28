@@ -41,12 +41,6 @@
                 <exclude name="**"/>
             </fileset>
         </copy>
-        <copy includeemptydirs="false" todir="target/test-classes">
-            <fileset dir="src/test/java">
-                <exclude name="**/*.launch"/>
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
     </target>
     <target name="clean">
         <delete dir="target/classes"/>
@@ -61,10 +55,6 @@
             <src path="src/main/java"/>
             <src path="src/main/resources"/>
             <exclude name="**"/>
-            <classpath refid="BetterBlockBreaking.classpath"/>
-        </javac>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="target/test-classes" includeantruntime="false" source="${source}" target="${target}">
-            <src path="src/test/java"/>
             <classpath refid="BetterBlockBreaking.classpath"/>
         </javac>
     </target>
@@ -82,9 +72,12 @@
         <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
         <antcall target="build"/>
     </target>
-    <target name="New_configuration (9)">
-        <java classname="org.bukkit.craftbukkit.Main" dir="../../../Desktop/server" failonerror="true" fork="yes">
-            <classpath refid="run.New_configuration (9).classpath"/>
-        </java>
-    </target>
+    <target name="build-jar">
+    	
+    	<jar destfile="C:\Users\Gustav\Desktop\server\plugins\BetterBlockBreaking-0.4.2-SNAPSHOT.jar"
+       		basedir="target/classes"
+      	    includes="com/github/cheesesoftware/BetterBlockBreaking/*">
+    		<fileset dir="target/classes" includes="*" />
+  		</jar>
+ 	</target>
 </project>
