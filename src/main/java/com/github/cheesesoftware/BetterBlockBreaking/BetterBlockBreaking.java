@@ -264,7 +264,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			Material m = materials.get(block.getLocation());
 			if (m != Material.TNT) {
 			    block.setType(m);
-			    plugin.setBlockDamage(block, ((float) (4 + r.nextInt(8) * (1 / (distance + 0.001f)))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
+			    plugin.setBlockDamage(block, ((float) (1 + r.nextInt(4) * (1 / (distance + 0.001f)))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
 			}
 		    }
 		}
