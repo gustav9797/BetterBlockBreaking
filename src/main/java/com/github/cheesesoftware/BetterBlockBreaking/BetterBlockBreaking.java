@@ -262,8 +262,11 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		if (!e.isCancelled()) {
 		    for (Block block : blocks) {
 			double distance = explosion.distance(block.getLocation());
-			block.setType(materials.get(block.getLocation()));
-			plugin.setBlockDamage(block, ((float) (r.nextInt(12) * (1 / distance))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
+			Material m = materials.get(block.getLocation());
+			if (m != Material.TNT) {
+			    block.setType(m);
+			    plugin.setBlockDamage(block, ((float) (r.nextInt(14) * (1 / distance))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
+			}
 		    }
 		}
 	    }
@@ -276,7 +279,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
 	WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
 	BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
-	//net.minecraft.server.v1_8_R1.Block nmsBlock = world.getType(pos).getBlock();
+	// net.minecraft.server.v1_8_R1.Block nmsBlock = world.getType(pos).getBlock();
 
 	float f = percentage * 2.4f;
 	if (f > 10) {
