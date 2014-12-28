@@ -1,4 +1,14 @@
 # default config.yml
 
-# Time in milliseconds for damaged blocks to become normal
-blockDamageRemovalTimeout: 120000
+# Milliseconds between a block has been damaged and starts fading
+millisecondsBeforeBeginFade: 120000
+
+# Milliseconds between each fade
+millisecondsBetweenFade: 2000
+
+# Damage decrease per fade. A fully damaged block has 10 damage points, a non damaged block has 0
+# Set to 10 or more to fade block instantly
+damageDecreasePerFade: 1
+
+# Disable blocks being damaged in explosions
+useCustomExplosions: true

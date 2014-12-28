@@ -56,12 +56,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     public static int blockDamageUpdateDelay = 20 * 20; // seconds * ticks
     private ProtocolManager protocolManager;
     private int removeOldDamagesBlocksTaskId = -1;
+    private boolean useCustomExplosions = true;
 
     private FileConfiguration customConfig = null;
     private File customConfigFile = null;
 
-    public HashMap<Location, Float> damagedBlocks = new HashMap<Location, Float>();
-    public HashMap<Location, Date> lastDamagedBlocks = new HashMap<Location, Date>();
+    public HashMap<Location, DamageBlock> damagedBlocks = new HashMap<Location, DamageBlock>();
 
     public void onEnable() {
 	this.saveDefaultConfig();
@@ -189,8 +189,18 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	    customConfigFile = new File(getDataFolder(), "config.yml");
 	}
 	customConfig = YamlConfiguration.loadConfiguration(customConfigFile);
-	RemoveOldDamagedBlocksTask.millisecondsForBlockRemove = customConfig.getLong("blockDamageRemovalTimeout");
-	Bukkit.getLogger().log(Level.INFO, "Loaded block damage timeout: " + RemoveOldDamagedBlocksTask.millisecondsForBlockRemove);
+
+	if (customConfig.contains("millisecondsBeforeBeginFade"))
+	    RemoveOldDamagedBlocksTask.millisecondsBeforeBeginFade = customConfig.getLong("millisecondsBeforeBeginFade");
+
+	if (customConfig.contains("millisecondsBetweenFade"))
+	    RemoveOldDamagedBlocksTask.millisecondsBetweenFade = customConfig.getLong("millisecondsBetweenFade");
+
+	if (customConfig.contains("damageDecreasePerFade"))
+	    RemoveOldDamagedBlocksTask.damageDecreasePerFade = customConfig.getInt("damageDecreasePerFade");
+
+	if (customConfig.contains("useCustomExplosions"))
+	    this.useCustomExplosions = customConfig.getBoolean("useCustomExplosions");
 
 	// Look for defaults in the jar
 	Reader defConfigStream;
@@ -235,16 +245,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerDestroyBlock(BlockBreakEvent event) {
 	Block block = event.getBlock();
-	// if (!block.hasMetadata("processing")) {
 	WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
 	BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
 	this.cleanBlock(block, world, pos);
-	// event.setCancelled(true);
-	// breakBlock(event.getBlock(), world, pos, event.getPlayer(), false);
-	// }
     }
 
-    public void breakBlock(Block block, WorldServer world, BlockPosition pos, Player player, boolean playSound) {
+    public void breakBlock(Block block, WorldServer world, BlockPosition pos, Player player) {
 	// Don't break block if it's currently being processed
 	if (block.getType() != org.bukkit.Material.AIR && !block.hasMetadata("processing")) {
 	    block.setMetadata("processing", new FixedMetadataValue(this, true));
@@ -266,11 +272,9 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	    } else {
 		cleanBlock(block, world, pos);
 
-		// Don't play sound if client broke the block entirely, creates duplicate sounds
-		if (playSound) {
-		    String sound = world.getType(pos).getBlock().stepSound.getBreakSound();
-		    world.makeSound(pos.getX(), pos.getY(), pos.getZ(), sound, 2.0f, 1.0f);
-		}
+		// Play block break sound
+		String sound = world.getType(pos).getBlock().stepSound.getBreakSound();
+		world.makeSound(pos.getX(), pos.getY(), pos.getZ(), sound, 2.0f, 1.0f);
 
 		// Use the proper function to break block, this also applies any effects the item the player is holding has on the block
 		((CraftPlayer) player).getHandle().playerInteractManager.breakBlock(pos);
@@ -280,9 +284,9 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     }
 
     public void updateBlockInfo(Location l, float damage) {
-	Date dateModified = new Date();
-	this.damagedBlocks.put(l, damage);
-	this.lastDamagedBlocks.put(l, dateModified);
+	DamageBlock block = new DamageBlock(l);
+	block.setDamageDate();
+	this.damagedBlocks.put(l, block);
     }
 
     public void cleanBlock(Block block, WorldServer world, BlockPosition pos) {
@@ -314,6 +318,9 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		toRemove.die();
 	}
 
+	if (this.damagedBlocks.containsKey(block.getLocation()))
+	    this.damagedBlocks.remove(block.getLocation());
+
 	// Remove all the metadata
 	block.removeMetadata("damage", this);
 	block.removeMetadata("monster", this);
@@ -325,34 +332,36 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {
-	final List<Block> blocks = event.blockList();
-	final Location explosion = event.getLocation();
-	final BetterBlockBreaking plugin = this;
-	final EntityExplodeEvent e = event;
-	final Map<Location, Material> materials = new HashMap<Location, Material>();
-	for (Block block : blocks)
-	    materials.put(block.getLocation(), block.getType());
-	event.setYield(0);
+	if (this.useCustomExplosions) {
+	    final List<Block> blocks = event.blockList();
+	    final Location explosion = event.getLocation();
+	    final BetterBlockBreaking plugin = this;
+	    final EntityExplodeEvent e = event;
+	    final Map<Location, Material> materials = new HashMap<Location, Material>();
+	    for (Block block : blocks)
+		materials.put(block.getLocation(), block.getType());
+	    event.setYield(0);
 
-	BukkitRunnable runnable = new BukkitRunnable() {
+	    BukkitRunnable runnable = new BukkitRunnable() {
 
-	    @Override
-	    public void run() {
-		Random r = new Random();
-		if (!e.isCancelled()) {
-		    for (Block block : blocks) {
-			double distance = explosion.distance(block.getLocation());
-			Material m = materials.get(block.getLocation());
-			if (m != Material.TNT) {
-			    block.setType(m);
-			    // plugin.setBlockDamage(block, ((float) (2 + r.nextInt(4) * (1 / (distance)))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
-			    plugin.setBlockDamage(block, (float) ((14 + (r.nextInt(5) - 2) - (2.0f * distance)) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0)));
+		@Override
+		public void run() {
+		    Random r = new Random();
+		    if (!e.isCancelled()) {
+			for (Block block : blocks) {
+			    double distance = explosion.distance(block.getLocation());
+			    Material m = materials.get(block.getLocation());
+			    if (m != Material.TNT) {
+				block.setType(m);
+				// plugin.setBlockDamage(block, ((float) (2 + r.nextInt(4) * (1 / (distance)))) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0));
+				plugin.setBlockDamage(block, (float) ((14 + (r.nextInt(5) - 2) - (2.0f * distance)) + (block.hasMetadata("damage") ? block.getMetadata("damage").get(0).asFloat() : 0)));
+			    }
 			}
 		    }
 		}
-	    }
-	};
-	runnable.runTaskLater(this, 0);
+	    };
+	    runnable.runTaskLater(this, 0);
+	}
     }
 
     // API function, other plugins can set block damage
@@ -365,7 +374,6 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	if (damage < 0)
 	    damage = 0;
 
-	Bukkit.getServer().getPlayer("gustav9797").sendMessage("damage " + damage);
 	if (damage > 10) {
 	    if (block.getType() != org.bukkit.Material.AIR) {
 		cleanBlock(block, world, pos);
