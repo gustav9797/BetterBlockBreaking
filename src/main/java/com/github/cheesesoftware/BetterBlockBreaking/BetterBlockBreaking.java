@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -243,14 +244,26 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onEntityExplode(EntityExplodeEvent event) {
-	List<Block> blocks = event.blockList();
-	Location explosion = event.getLocation();
+	final List<Block> blocks = event.blockList();
+	final Location explosion = event.getLocation();
+	final BetterBlockBreaking plugin = this;
 
-	for (Block block : blocks) {
-	    double distance = explosion.distance(block.getLocation());
-	    block.setType(block.getType());
-	    this.setBlockDamage(block, (float) distance);
-	}
+	final Map<Location, Material> materials = new HashMap<Location, Material>();
+	for (Block block : blocks)
+	    materials.put(block.getLocation(), block.getType());
+
+	BukkitRunnable runnable = new BukkitRunnable() {
+
+	    @Override
+	    public void run() {
+		for (Block block : blocks) {
+		    double distance = explosion.distance(block.getLocation());
+		    block.setType(materials.get(block.getLocation()));
+		    plugin.setBlockDamage(block, (float) distance);
+		}
+	    }
+	};
+	runnable.runTaskLater(this, 1);
     }
 
     // API function, other plugins can set block damage
