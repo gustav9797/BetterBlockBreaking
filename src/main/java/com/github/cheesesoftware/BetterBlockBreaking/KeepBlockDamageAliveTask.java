@@ -4,7 +4,6 @@ import net.minecraft.server.v1_8_R1.BlockPosition;
 import net.minecraft.server.v1_8_R1.PacketPlayOutBlockBreakAnimation;
 import net.minecraft.server.v1_8_R1.WorldServer;
 
-import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_8_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R1.CraftWorld;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -13,11 +12,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class KeepBlockDamageAliveTask extends BukkitRunnable {
 
     private final JavaPlugin plugin;
-    private final Block block;
+    private final DamageBlock block;
     private final WorldServer world;
     private final BlockPosition pos;
 
-    public KeepBlockDamageAliveTask(JavaPlugin plugin, Block block) {
+    public KeepBlockDamageAliveTask(JavaPlugin plugin, DamageBlock block) {
 	this.plugin = plugin;
 	this.block = block;
 	this.world = ((CraftWorld) block.getWorld()).getHandle();
@@ -26,12 +25,11 @@ public class KeepBlockDamageAliveTask extends BukkitRunnable {
 
     @Override
     public void run() {
-	if (block.hasMetadata("damage") && block.hasMetadata("monsterId")) {
-	    float currentDamage = block.getMetadata("damage").get(0).asFloat();
-	    int monsterId = block.getMetadata("monsterId").get(0).asInt();
+	if (block.isDamaged() && block.getEntity() != null) {
+	    float currentDamage = block.getDamage();
 
 	    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
-		    new PacketPlayOutBlockBreakAnimation(monsterId, pos, (int) currentDamage));
+		    new PacketPlayOutBlockBreakAnimation(block.getEntity().getId(), pos, (int) currentDamage));
 	} else
 	    this.cancel();
     }
