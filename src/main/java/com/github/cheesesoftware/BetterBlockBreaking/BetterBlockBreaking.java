@@ -126,7 +126,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 					damageBlock.setEntity(entity);
 				    }
 
-				    // If it's a first time break and player stops breaking, send damage packet
+				    // Send damage packet
 				    float currentDamage = damageBlock.getDamage();
 				    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(posLocation.getX(), posLocation.getY(), posLocation.getZ(), 120, world.dimension,
 					    new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) currentDamage));
@@ -226,7 +226,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerDestroyBlock(BlockBreakEvent event) {
 	Block block = event.getBlock();
-	this.getDamageBlock(block.getLocation()).clean();
+	this.getDamageBlock(block.getLocation()).removeAllDamage();
     }
 
     @EventHandler

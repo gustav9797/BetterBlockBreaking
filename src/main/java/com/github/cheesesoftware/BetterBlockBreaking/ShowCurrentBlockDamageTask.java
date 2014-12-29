@@ -4,12 +4,8 @@ import java.util.Date;
 
 import net.minecraft.server.v1_8_R1.BlockPosition;
 import net.minecraft.server.v1_8_R1.EntityPlayer;
-import net.minecraft.server.v1_8_R1.PacketPlayOutBlockBreakAnimation;
 import net.minecraft.server.v1_8_R1.WorldServer;
 
-import org.bukkit.Bukkit;
-import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_8_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -38,22 +34,12 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
 	    EntityPlayer player = ((CraftPlayer) p).getHandle();
 	    BlockPosition pos = new BlockPosition(damageBlock.getX(), damageBlock.getY(), damageBlock.getZ());
 	    net.minecraft.server.v1_8_R1.Block block = world.getType(pos).getBlock();
-	    //Block bukkitBlock = p.getWorld().getBlockAt(damageBlock.getX(), damageBlock.getY(), damageBlock.getZ());
 
 	    float i = differenceMilliseconds / 20;
 	    float f = 1000 * ((block.getDamage(player, world, pos) * (float) (i)) / 240);
 	    f += damageBlock.getDamage();
 	    damageBlock.setDamage(f, p);
 	    p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(BetterBlockBreaking.getPlugin(), new Date()));
-
-	    /*if (damageBlock.getEntity() != null) {
-
-		if (!damageBlock.isNoCancel) {
-		    // Send damage packet
-		    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(bukkitBlock.getX(), bukkitBlock.getY(), bukkitBlock.getZ(), 120, world.dimension,
-			    new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) f));
-		}
-	    }*/
 	} else
 	    this.cancel();
     }

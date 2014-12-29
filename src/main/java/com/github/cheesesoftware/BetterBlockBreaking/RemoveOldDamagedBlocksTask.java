@@ -67,7 +67,7 @@ public class RemoveOldDamagedBlocksTask extends BukkitRunnable {
 	    float damage = damageBlock.getDamage();
 	    damage -= damageDecreasePerFade;
 	    if (damage <= 0) {
-		damageBlock.clean();
+		damageBlock.removeAllDamage();
 		return true;
 	    }
 

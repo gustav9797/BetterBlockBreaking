@@ -87,7 +87,7 @@ public class DamageBlock {
 	this.lastFade = new Date();
     }
 
-    public void setDamage(float damage, Player player) {
+    public void setDamage(float damage, Player breaker) {
 	this.damage = damage;
 	this.setDamageDate();
 
@@ -95,8 +95,7 @@ public class DamageBlock {
 	BlockPosition pos = new BlockPosition(getX(), getY(), getZ());
 
 	if (damage > 10) {
-	    this.breakBlock(player);
-	    this.clean();
+	    this.breakBlock(breaker);
 	    return;
 	} else {
 	    if (damage <= 0)
@@ -125,44 +124,46 @@ public class DamageBlock {
 	}
     }
 
-    public void breakBlock(Player player) {
+    public void breakBlock(Player breaker) {
 	Block block = this.l.getBlock();
-	if (player != null) {
+	if (breaker != null) {
 	    WorldServer world = ((CraftWorld) this.l.getWorld()).getHandle();
 	    BlockPosition pos = new BlockPosition(getX(), getY(), getZ());
 
 	    if (block.getType() != org.bukkit.Material.AIR) {
 
 		// Call an additional BlockBreakEvent to make sure other plugins can cancel it
-		BlockBreakEvent event = new BlockBreakEvent(block, player);
+		BlockBreakEvent event = new BlockBreakEvent(block, breaker);
 		Bukkit.getServer().getPluginManager().callEvent(event);
 
 		if (event.isCancelled()) {
 		    // Let the client know the block still exists
-		    ((CraftPlayer) player).getHandle().playerConnection.sendPacket(new PacketPlayOutBlockChange(world, pos));
+		    ((CraftPlayer) breaker).getHandle().playerConnection.sendPacket(new PacketPlayOutBlockChange(world, pos));
 		    // Update any tile entity data for this block
 		    TileEntity tileentity = world.getTileEntity(pos);
 		    if (tileentity != null) {
-			((CraftPlayer) player).getHandle().playerConnection.sendPacket(tileentity.getUpdatePacket());
+			((CraftPlayer) breaker).getHandle().playerConnection.sendPacket(tileentity.getUpdatePacket());
 		    }
 
-		    this.clean();
+		    this.removeAllDamage();
 		} else {
-		    clean();
+		    this.removeAllDamage();
 
 		    // Play block break sound
 		    String sound = world.getType(pos).getBlock().stepSound.getBreakSound();
 		    world.makeSound(pos.getX(), pos.getY(), pos.getZ(), sound, 2.0f, 1.0f);
 
 		    // Use the proper function to break block, this also applies any effects the item the player is holding has on the block
-		    ((CraftPlayer) player).getHandle().playerInteractManager.breakBlock(pos);
+		    ((CraftPlayer) breaker).getHandle().playerInteractManager.breakBlock(pos);
 		}
 	    }
-	} else
+	} else {
 	    block.setType(Material.AIR);
+	    this.removeAllDamage();
+	}
     }
 
-    public void clean() {
+    public void removeAllDamage() {
 
 	WorldServer world = ((CraftWorld) this.getWorld()).getHandle();
 	BlockPosition pos = new BlockPosition(this.getX(), this.getY(), this.getZ());
