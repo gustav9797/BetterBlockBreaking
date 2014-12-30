@@ -33,7 +33,7 @@ public class DamageBlock {
 
     public boolean isNoCancel = false;
     public int keepBlockDamageAliveTaskId = -1;
-    public int showCurrentDamageTaskId = -1;
+    //public int showCurrentDamageTaskId = -1;
 
     public DamageBlock(Location l) {
 	this.l = l;
@@ -171,8 +171,8 @@ public class DamageBlock {
 	// Clean tasks
 	if (keepBlockDamageAliveTaskId != -1)
 	    Bukkit.getScheduler().cancelTask(keepBlockDamageAliveTaskId);
-	if (this.showCurrentDamageTaskId != -1)
-	    Bukkit.getScheduler().cancelTask(showCurrentDamageTaskId);
+	//if (this.showCurrentDamageTaskId != -1)
+	  //  Bukkit.getScheduler().cancelTask(showCurrentDamageTaskId);
 
 	// Send a damage packet to remove the damage of the block
 	if (getEntity() != null) {

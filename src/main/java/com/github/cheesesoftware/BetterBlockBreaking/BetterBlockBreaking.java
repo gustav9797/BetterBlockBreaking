@@ -99,9 +99,9 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			    if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
 				// Clean old task
 				p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
-				if (damageBlock.showCurrentDamageTaskId != -1) {
-				    Bukkit.getScheduler().cancelTask(damageBlock.showCurrentDamageTaskId);
-				    damageBlock.showCurrentDamageTaskId = -1;
+				if (p.hasMetadata("showCurrentDamageTaskId")) {
+				    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+				    p.removeMetadata("showCurrentDamageTaskId", plugin);
 				}
 
 				// Prevent duplicate animations on the same block when player doesn't stop breaking
@@ -110,12 +110,18 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
 				// Start new task
 				BukkitTask task = new ShowCurrentBlockDamageTask(p, damageBlock).runTaskTimer(plugin, 0, 2);
-				damageBlock.showCurrentDamageTaskId = task.getTaskId();
+				p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
 
 			    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
 
+				// Clean old tasks
+				if (p.hasMetadata("showCurrentDamageTaskId")) {
+				    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+				    p.removeMetadata("showCurrentDamageTaskId", plugin);
+				}
+
 				// Player cancelled breaking
-				if (damageBlock.isNoCancel && damageBlock.isDamaged()) {
+				if (damageBlock.isNoCancel && type == EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
 
 				    // Load block "monster", used for displaying the damage on the block
 				    WorldServer world = ((CraftWorld) damageBlock.getWorld()).getHandle();
@@ -143,12 +149,6 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 				    damageBlock.keepBlockDamageAliveTaskId = aliveTask.getTaskId();
 				}
 				damageBlock.isNoCancel = false;
-
-				// Clean old tasks
-				if (damageBlock.showCurrentDamageTaskId != -1) {
-				    Bukkit.getScheduler().cancelTask(damageBlock.showCurrentDamageTaskId);
-				    damageBlock.showCurrentDamageTaskId = -1;
-				}
 
 				// Clean metadata
 				p.removeMetadata("BlockBeginDestroy", plugin);
