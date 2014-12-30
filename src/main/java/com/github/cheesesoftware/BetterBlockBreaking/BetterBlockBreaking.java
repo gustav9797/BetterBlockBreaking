@@ -49,7 +49,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 
 public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
-    public static int blockDamageUpdateDelay = 20 * 20; // seconds * ticks
+    public static int blockDamageUpdateDelay = 5 * 20; // seconds * ticks
     private ProtocolManager protocolManager;
     private int removeOldDamagesBlocksTaskId = -1;
     private boolean useCustomExplosions = true;
