@@ -29,6 +29,7 @@ import org.bukkit.craftbukkit.v1_8_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R1.CraftWorld;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -229,12 +230,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	this.getDamageBlock(block.getLocation()).removeAllDamage();
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onEntityExplode(EntityExplodeEvent event) {
-	if (this.useCustomExplosions) {
+	if (this.useCustomExplosions && !event.isCancelled()) {
+	    event.setCancelled(true);
 	    final List<Block> blocks = event.blockList();
 	    final Location explosion = event.getLocation();
-	    final EntityExplodeEvent e = event;
 	    final Map<Location, Material> materials = new HashMap<Location, Material>();
 	    for (Block block : blocks)
 		materials.put(block.getLocation(), block.getType());
@@ -245,16 +246,10 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		@Override
 		public void run() {
 		    Random r = new Random();
-		    if (!e.isCancelled()) {
-			for (Block block : blocks) {
-			    double distance = explosion.distance(block.getLocation());
-			    Material m = materials.get(block.getLocation());
-			    if (m != Material.TNT) {
-				block.setType(m);
-				DamageBlock damageBlock = getDamageBlock(block.getLocation());
-				damageBlock.setDamage((float) ((14 + (r.nextInt(5) - 2) - (2.0f * distance)) + damageBlock.getDamage()), null);
-			    }
-			}
+		    for (Block block : blocks) {
+			double distance = explosion.distance(block.getLocation());
+			DamageBlock damageBlock = getDamageBlock(block.getLocation());
+			damageBlock.setDamage((float) ((14 + (r.nextInt(5) - 2) - (2.0f * distance)) + damageBlock.getDamage()), null);
 		    }
 		}
 	    };
