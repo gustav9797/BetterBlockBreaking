@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -13,8 +14,11 @@ import java.util.Random;
 import java.util.logging.Level;
 
 import net.minecraft.server.v1_8_R1.BlockPosition;
+import net.minecraft.server.v1_8_R1.BlockTNT;
+import net.minecraft.server.v1_8_R1.Entity;
 import net.minecraft.server.v1_8_R1.EntityChicken;
 import net.minecraft.server.v1_8_R1.EntityLiving;
+import net.minecraft.server.v1_8_R1.EntityTNTPrimed;
 import net.minecraft.server.v1_8_R1.EnumPlayerDigType;
 import net.minecraft.server.v1_8_R1.PacketPlayOutBlockBreakAnimation;
 import net.minecraft.server.v1_8_R1.WorldServer;
@@ -27,6 +31,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_8_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_8_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_8_R1.entity.CraftEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -233,13 +238,15 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onEntityExplode(EntityExplodeEvent event) {
 	if (this.useCustomExplosions && !event.isCancelled()) {
-	    event.setCancelled(true);
-	    final List<Block> blocks = event.blockList();
+	    final List<Block> blocks = new ArrayList<Block>(event.blockList());
+	    event.blockList().clear();
+	    event.setYield(0);
+
+	    final EntityExplodeEvent e = event;
 	    final Location explosion = event.getLocation();
 	    final Map<Location, Material> materials = new HashMap<Location, Material>();
 	    for (Block block : blocks)
 		materials.put(block.getLocation(), block.getType());
-	    event.setYield(0);
 
 	    BukkitRunnable runnable = new BukkitRunnable() {
 
@@ -247,6 +254,21 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 		public void run() {
 		    Random r = new Random();
 		    for (Block block : blocks) {
+
+			WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
+			BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
+
+			if (block.getType() == Material.TNT) {
+			    Entity entity = ((CraftEntity) e.getEntity()).getHandle();
+			    EntityLiving shit = entity == null ? null : (entity instanceof EntityTNTPrimed ? ((EntityTNTPrimed) entity).getSource()
+				    : (entity instanceof EntityLiving ? (EntityLiving) entity : null));
+			    EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) pos.getX() + 0.5F), (double) ((float) pos.getY() + 0.5F),
+				    (double) ((float) pos.getZ() + 0.5F), shit);
+
+			    entitytntprimed.fuseTicks = world.random.nextInt(entitytntprimed.fuseTicks / 4) + entitytntprimed.fuseTicks / 8;
+			    world.addEntity(entitytntprimed);
+			}
+
 			double distance = explosion.distance(block.getLocation());
 			DamageBlock damageBlock = getDamageBlock(block.getLocation());
 			damageBlock.setDamage((float) ((14 + (r.nextInt(5) - 2) - (2.0f * distance)) + damageBlock.getDamage()), null);
