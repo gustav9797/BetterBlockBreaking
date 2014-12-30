@@ -14,7 +14,6 @@ import java.util.Random;
 import java.util.logging.Level;
 
 import net.minecraft.server.v1_8_R1.BlockPosition;
-import net.minecraft.server.v1_8_R1.BlockTNT;
 import net.minecraft.server.v1_8_R1.Entity;
 import net.minecraft.server.v1_8_R1.EntityChicken;
 import net.minecraft.server.v1_8_R1.EntityLiving;
@@ -237,7 +236,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onEntityExplode(EntityExplodeEvent event) {
-	if (this.useCustomExplosions && !event.isCancelled()) {
+	if (this.useCustomExplosions && !event.isCancelled() && event.blockList().size() > 0) {
 	    final List<Block> blocks = new ArrayList<Block>(event.blockList());
 	    event.blockList().clear();
 	    event.setYield(0);
