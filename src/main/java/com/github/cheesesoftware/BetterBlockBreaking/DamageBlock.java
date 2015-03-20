@@ -3,8 +3,6 @@ package com.github.cheesesoftware.BetterBlockBreaking;
 import java.util.Date;
 
 import net.minecraft.server.v1_8_R2.BlockPosition;
-import net.minecraft.server.v1_8_R2.EntityChicken;
-import net.minecraft.server.v1_8_R2.EntityLiving;
 import net.minecraft.server.v1_8_R2.PacketPlayOutBlockBreakAnimation;
 import net.minecraft.server.v1_8_R2.PacketPlayOutBlockChange;
 import net.minecraft.server.v1_8_R2.TileEntity;
@@ -20,7 +18,6 @@ import org.bukkit.craftbukkit.v1_8_R2.CraftWorld;
 import org.bukkit.craftbukkit.v1_8_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.scheduler.BukkitTask;
 
 public class DamageBlock {
@@ -29,7 +26,7 @@ public class DamageBlock {
     private Date dateDamaged = null;
     private Date lastFade = null;
     private float damage = 0;
-    private EntityLiving entity = null;
+    private int entityId = 0;
 
     public boolean isNoCancel = false;
     public int keepBlockDamageAliveTaskId = -1;
@@ -52,8 +49,8 @@ public class DamageBlock {
 	return this.lastFade;
     }
 
-    public EntityLiving getEntity() {
-	return this.entity;
+    public int getEntityId() {
+	return this.entityId;
     }
 
     public float getDamage() {
@@ -101,17 +98,22 @@ public class DamageBlock {
 	} else {
 	    if (damage <= 0)
 		damage = -1;
+	    
 
 	    // Load block "monster", used for displaying the damage on the block
-	    if (this.entity == null) {
+	    /*if (this.entity == null) {
 		this.entity = new EntityChicken(world);
 		world.addEntity(entity, SpawnReason.CUSTOM);
+	    }*/
+	    
+	    if(this.entityId == -1) {
+		this.entityId = BetterBlockBreaking.generateEntityId();
 	    }
 
 	    // Send damage packet
 	    if (!this.isNoCancel)
 		((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(getX(), getY(), getZ(), 120, world.dimension,
-			new PacketPlayOutBlockBreakAnimation(entity.getId(), pos, (int) this.damage));
+			new PacketPlayOutBlockBreakAnimation(this.entityId, pos, (int) this.damage));
 
 	    // Cancel old task
 	    if (this.keepBlockDamageAliveTaskId != -1) {
@@ -176,17 +178,15 @@ public class DamageBlock {
 	// Bukkit.getScheduler().cancelTask(showCurrentDamageTaskId);
 
 	// Send a damage packet to remove the damage of the block
-	if (getEntity() != null) {
+	if (this.entityId != -1) {
 	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(this.getX(), this.getY(), this.getZ(), 120, world.dimension,
-		    new PacketPlayOutBlockBreakAnimation(this.getEntity().getId(), pos, -1));
-
-	    this.getEntity().die();
+		    new PacketPlayOutBlockBreakAnimation(this.entityId, pos, -1));
 	}
 	BetterBlockBreaking.getPlugin().damageBlocks.remove(getLocation());
     }
 
-    public void setEntity(EntityLiving entity) {
-	this.entity = entity;
+    public void setEntityId(int entityId) {
+	this.entityId = entityId;
     }
 
 }

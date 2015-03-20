@@ -72,11 +72,11 @@ public class RemoveOldDamagedBlocksTask extends BukkitRunnable {
 	    }
 
 	    damageBlock.setDamage(damage, null);
-	    if (damageBlock.getEntity() != null) {
+	    if (damageBlock.getEntityId() != -1) {
 		WorldServer world = ((CraftWorld) damageBlock.getWorld()).getHandle();
 
 		((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(damageBlock.getX(), damageBlock.getY(), damageBlock.getZ(), 120, world.dimension,
-			new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) damage));
+			new PacketPlayOutBlockBreakAnimation(damageBlock.getEntityId(), pos, (int) damage));
 	    } else
 		return true;
 	} else

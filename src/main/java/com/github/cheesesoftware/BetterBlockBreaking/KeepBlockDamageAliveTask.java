@@ -25,11 +25,11 @@ public class KeepBlockDamageAliveTask extends BukkitRunnable {
 
     @Override
     public void run() {
-	if (block.isDamaged() && block.getEntity() != null) {
+	if (block.isDamaged() && block.getEntityId() != -1) {
 	    float currentDamage = block.getDamage();
 
 	    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,
-		    new PacketPlayOutBlockBreakAnimation(block.getEntity().getId(), pos, (int) currentDamage));
+		    new PacketPlayOutBlockBreakAnimation(block.getEntityId(), pos, (int) currentDamage));
 	} else
 	    this.cancel();
     }

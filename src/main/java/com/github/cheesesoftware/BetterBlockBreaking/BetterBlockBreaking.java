@@ -15,7 +15,6 @@ import java.util.logging.Level;
 
 import net.minecraft.server.v1_8_R2.BlockPosition;
 import net.minecraft.server.v1_8_R2.Entity;
-import net.minecraft.server.v1_8_R2.EntityChicken;
 import net.minecraft.server.v1_8_R2.EntityLiving;
 import net.minecraft.server.v1_8_R2.EntityTNTPrimed;
 import net.minecraft.server.v1_8_R2.PacketPlayInBlockDig.EnumPlayerDigType;
@@ -36,7 +35,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -54,6 +52,7 @@ import com.comphenix.protocol.reflect.StructureModifier;
 
 public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
+    public static ArrayList<Integer> entityIds = new ArrayList<Integer>();
     public static int blockDamageUpdateDelay = 5 * 20; // seconds * ticks
     private ProtocolManager protocolManager;
     private int removeOldDamagesBlocksTaskId = -1;
@@ -130,17 +129,17 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
 				    // Load block "monster", used for displaying the damage on the block
 				    WorldServer world = ((CraftWorld) damageBlock.getWorld()).getHandle();
-				    EntityLiving entity = damageBlock.getEntity();
-				    if (entity == null) {
-					entity = new EntityChicken(world);
-					world.addEntity(entity, SpawnReason.CUSTOM);
-					damageBlock.setEntity(entity);
+				    
+				    int entityId = damageBlock.getEntityId();
+				    if (entityId == -1) {
+					entityId = BetterBlockBreaking.generateEntityId();
+					damageBlock.setEntityId(entityId);
 				    }
 
 				    // Send damage packet
 				    float currentDamage = damageBlock.getDamage();
 				    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(posLocation.getX(), posLocation.getY(), posLocation.getZ(), 120, world.dimension,
-					    new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) currentDamage));
+					    new PacketPlayOutBlockBreakAnimation(damageBlock.getEntityId(), pos, (int) currentDamage));
 
 				    // Cancel old keep-damage-alive task
 				    if (damageBlock.keepBlockDamageAliveTaskId != -1) {
@@ -168,6 +167,15 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     public void onDisable() {
 	Bukkit.getScheduler().cancelTask(this.removeOldDamagesBlocksTaskId);
+    }
+
+    public static int generateEntityId() {
+	for(int i = 0; true; i++){
+	    if(!entityIds.contains(i)){
+		entityIds.add(i);
+		return i;
+	    }
+	}
     }
 
     public void reloadCustomConfig() {
