@@ -74,7 +74,7 @@
     </target>
     <target name="build-jar">
     	
-    	<jar destfile="C:\Users\Gustav\Desktop\server\plugins\BetterBlockBreaking-0.5.0-SNAPSHOT.jar"
+    	<jar destfile="C:\Users\Gustav\Desktop\spigotserver1.8\plugins\BetterBlockBreaking.jar"
        		basedir="target/classes"
       	    includes="com/github/cheesesoftware/BetterBlockBreaking/*">
     		<fileset dir="target/classes" includes="*" />

@@ -13,14 +13,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 
-import net.minecraft.server.v1_8_R2.BlockPosition;
-import net.minecraft.server.v1_8_R2.Entity;
-import net.minecraft.server.v1_8_R2.EntityChicken;
-import net.minecraft.server.v1_8_R2.EntityLiving;
-import net.minecraft.server.v1_8_R2.EntityTNTPrimed;
-import net.minecraft.server.v1_8_R2.PacketPlayInBlockDig.EnumPlayerDigType;
-import net.minecraft.server.v1_8_R2.PacketPlayOutBlockBreakAnimation;
-import net.minecraft.server.v1_8_R2.WorldServer;
+import net.minecraft.server.v1_8_R3.BlockPosition;
+import net.minecraft.server.v1_8_R3.Entity;
+import net.minecraft.server.v1_8_R3.EntityChicken;
+import net.minecraft.server.v1_8_R3.EntityLiving;
+import net.minecraft.server.v1_8_R3.EntityTNTPrimed;
+import net.minecraft.server.v1_8_R3.PacketPlayInBlockDig.EnumPlayerDigType;
+import net.minecraft.server.v1_8_R3.PacketPlayOutBlockBreakAnimation;
+import net.minecraft.server.v1_8_R3.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -28,9 +28,9 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.v1_8_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_8_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_8_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -39,6 +39,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -61,13 +62,17 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     private FileConfiguration customConfig = null;
     private File customConfigFile = null;
+    
+    public Plugin worldGuard = null;
 
     public HashMap<Location, DamageBlock> damageBlocks = new HashMap<Location, DamageBlock>();
 
     public void onEnable() {
+	this.worldGuard = this.getWorldGuard();
+	
 	this.saveDefaultConfig();
 	this.reloadCustomConfig();
-
+	
 	Bukkit.getServer().getPluginManager().registerEvents(this, this);
 
 	BukkitTask task = new RemoveOldDamagedBlocksTask(this).runTaskTimer(this, 0, 20);
@@ -93,7 +98,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			    EnumPlayerDigType type = data.getValues().get(0);
 			    Player p = event.getPlayer();
 			    BlockPosition pos = dataTemp.getValues().get(0);
+			    
 			    Location posLocation = new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ());
+			    
+			    if(worldGuard != null && !((com.sk89q.worldguard.bukkit.WorldGuardPlugin)worldGuard).canBuild(p, posLocation)) {
+				return;
+			    }
 
 			    DamageBlock damageBlock = damageBlocks.get(posLocation);
 			    if (damageBlock == null) {
@@ -289,5 +299,19 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     public static BetterBlockBreaking getPlugin() {
 	return (BetterBlockBreaking) Bukkit.getPluginManager().getPlugin("BetterBlockBreaking");
+    }
+
+    private Plugin getWorldGuard() {
+	Plugin plugin = getServer().getPluginManager().getPlugin("WorldGuard");
+
+	// WorldGuard may not be loaded
+	if (plugin == null || !(plugin instanceof com.sk89q.worldguard.bukkit.WorldGuardPlugin)) {
+	    getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] WorldGuard could not be loaded. Disabling interaction.");
+	    return null; // Maybe you want throw an exception instead
+	}
+	else
+	    getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled WorldGuard interaction.");
+
+	return plugin;
     }
 }
