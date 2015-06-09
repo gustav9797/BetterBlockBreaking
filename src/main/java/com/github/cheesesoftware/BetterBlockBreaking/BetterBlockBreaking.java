@@ -244,7 +244,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	this.getDamageBlock(block.getLocation()).removeAllDamage();
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityExplode(EntityExplodeEvent event) {
 	if (this.useCustomExplosions && !event.isCancelled() && event.blockList().size() > 0) {
 	    final List<Block> blocks = new ArrayList<Block>(event.blockList());
