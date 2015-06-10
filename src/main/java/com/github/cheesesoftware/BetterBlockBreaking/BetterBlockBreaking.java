@@ -38,6 +38,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -57,26 +58,26 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     public static int blockDamageUpdateDelay = 5 * 20; // seconds * ticks
     private ProtocolManager protocolManager;
-    private int removeOldDamagesBlocksTaskId = -1;
+    private int removeOldDamagedBlocksTaskId = -1;
     private boolean useCustomExplosions = true;
 
     private FileConfiguration customConfig = null;
     private File customConfigFile = null;
-    
+
     public Plugin worldGuard = null;
 
     public HashMap<Location, DamageBlock> damageBlocks = new HashMap<Location, DamageBlock>();
 
     public void onEnable() {
 	this.worldGuard = this.getWorldGuard();
-	
+
 	this.saveDefaultConfig();
 	this.reloadCustomConfig();
-	
+
 	Bukkit.getServer().getPluginManager().registerEvents(this, this);
 
 	BukkitTask task = new RemoveOldDamagedBlocksTask(this).runTaskTimer(this, 0, 20);
-	this.removeOldDamagesBlocksTaskId = task.getTaskId();
+	this.removeOldDamagedBlocksTaskId = task.getTaskId();
     }
 
     public void onLoad() {
@@ -98,10 +99,10 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 			    EnumPlayerDigType type = data.getValues().get(0);
 			    Player p = event.getPlayer();
 			    BlockPosition pos = dataTemp.getValues().get(0);
-			    
+
 			    Location posLocation = new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ());
-			    
-			    if(worldGuard != null && !((com.sk89q.worldguard.bukkit.WorldGuardPlugin)worldGuard).canBuild(p, posLocation)) {
+
+			    if (worldGuard != null && !((com.sk89q.worldguard.bukkit.WorldGuardPlugin) worldGuard).canBuild(p, posLocation)) {
 				return;
 			    }
 
@@ -118,6 +119,8 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 				    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
 				    p.removeMetadata("showCurrentDamageTaskId", plugin);
 				}
+
+				damageBlock.resetFade();
 
 				// Prevent duplicate animations on the same block when player doesn't stop breaking
 				if (!damageBlock.isDamaged())
@@ -177,7 +180,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     }
 
     public void onDisable() {
-	Bukkit.getScheduler().cancelTask(this.removeOldDamagesBlocksTaskId);
+	Bukkit.getScheduler().cancelTask(this.removeOldDamagedBlocksTaskId);
     }
 
     public void reloadCustomConfig() {
@@ -236,6 +239,19 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	if (!customConfigFile.exists()) {
 	    this.saveResource("config.yml", false);
 	}
+    }
+
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent e) {
+	return;
+	/*if (e.getPlayer().getName().equals("gustav9797") && e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getPlayer().isSneaking()) {
+	    Player p = e.getPlayer();
+	    DamageBlock block = damageBlocks.get(e.getClickedBlock().getLocation());
+	    if (block != null) {
+		p.sendMessage("block damage: " + block.getDamage());
+	    } else
+		p.sendMessage("No damage block");
+	}*/
     }
 
     @EventHandler
@@ -308,8 +324,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 	if (plugin == null || !(plugin instanceof com.sk89q.worldguard.bukkit.WorldGuardPlugin)) {
 	    getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] WorldGuard could not be loaded. Disabling interaction.");
 	    return null; // Maybe you want throw an exception instead
-	}
-	else
+	} else
 	    getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled WorldGuard interaction.");
 
 	return plugin;

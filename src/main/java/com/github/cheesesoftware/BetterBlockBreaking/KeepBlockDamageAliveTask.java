@@ -25,7 +25,7 @@ public class KeepBlockDamageAliveTask extends BukkitRunnable {
 
     @Override
     public void run() {
-	if (block.isDamaged() && block.getEntity() != null) {
+	if (block.isDamaged() && block.getEntity() != null && ((BetterBlockBreaking)plugin).damageBlocks.containsKey(block.getLocation())) {
 	    float currentDamage = block.getDamage();
 
 	    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(block.getX(), block.getY(), block.getZ(), 120, world.dimension,

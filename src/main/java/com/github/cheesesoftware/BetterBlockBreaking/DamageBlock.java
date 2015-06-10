@@ -52,6 +52,11 @@ public class DamageBlock {
 	return this.lastFade;
     }
 
+    public void resetFade() {
+	this.dateDamaged = null;
+	this.lastFade = null;
+    }
+
     public EntityLiving getEntity() {
 	return this.entity;
     }
@@ -175,13 +180,16 @@ public class DamageBlock {
 	// if (this.showCurrentDamageTaskId != -1)
 	// Bukkit.getScheduler().cancelTask(showCurrentDamageTaskId);
 
-	// Send a damage packet to remove the damage of the block
-	if (getEntity() != null) {
-	    ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(this.getX(), this.getY(), this.getZ(), 120, world.dimension,
-		    new PacketPlayOutBlockBreakAnimation(this.getEntity().getId(), pos, -1));
-
-	    this.getEntity().die();
+	if (this.entity == null) {
+	    this.entity = new EntityChicken(world);
+	    world.addEntity(entity, SpawnReason.CUSTOM);
 	}
+
+	// Send a damage packet to remove the damage of the block
+	((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(this.getX(), this.getY(), this.getZ(), 120, world.dimension,
+		new PacketPlayOutBlockBreakAnimation(this.getEntity().getId(), pos, -1));
+
+	this.getEntity().die();
 	BetterBlockBreaking.getPlugin().damageBlocks.remove(getLocation());
     }
 
