@@ -23,6 +23,7 @@ import net.minecraft.server.v1_8_R3.PacketPlayOutBlockBreakAnimation;
 import net.minecraft.server.v1_8_R3.WorldServer;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -106,70 +107,73 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 				return;
 			    }
 
-			    DamageBlock damageBlock = damageBlocks.get(posLocation);
-			    if (damageBlock == null) {
-				damageBlock = new DamageBlock(posLocation);
-				damageBlocks.put(posLocation, damageBlock);
-			    }
+			    if (p.getGameMode() == GameMode.SURVIVAL) {
 
-			    if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
-				// Clean old task
-				p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
-				if (p.hasMetadata("showCurrentDamageTaskId")) {
-				    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
-				    p.removeMetadata("showCurrentDamageTaskId", plugin);
+				DamageBlock damageBlock = damageBlocks.get(posLocation);
+				if (damageBlock == null) {
+				    damageBlock = new DamageBlock(posLocation);
+				    damageBlocks.put(posLocation, damageBlock);
 				}
 
-				damageBlock.resetFade();
-
-				// Prevent duplicate animations on the same block when player doesn't stop breaking
-				if (!damageBlock.isDamaged())
-				    damageBlock.isNoCancel = true;
-
-				// Start new task
-				BukkitTask task = new ShowCurrentBlockDamageTask(p, damageBlock).runTaskTimer(plugin, 0, 2);
-				p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
-
-			    } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
-
-				// Clean old tasks
-				if (p.hasMetadata("showCurrentDamageTaskId")) {
-				    Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
-				    p.removeMetadata("showCurrentDamageTaskId", plugin);
-				}
-
-				// Player cancelled breaking
-				if (damageBlock.isNoCancel && type == EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
-
-				    // Load block "monster", used for displaying the damage on the block
-				    WorldServer world = ((CraftWorld) damageBlock.getWorld()).getHandle();
-				    EntityLiving entity = damageBlock.getEntity();
-				    if (entity == null) {
-					entity = new EntityChicken(world);
-					world.addEntity(entity, SpawnReason.CUSTOM);
-					damageBlock.setEntity(entity);
+				if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
+				    // Clean old task
+				    p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
+				    if (p.hasMetadata("showCurrentDamageTaskId")) {
+					Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+					p.removeMetadata("showCurrentDamageTaskId", plugin);
 				    }
 
-				    // Send damage packet
-				    float currentDamage = damageBlock.getDamage();
-				    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(posLocation.getX(), posLocation.getY(), posLocation.getZ(), 120, world.dimension,
-					    new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) currentDamage));
+				    damageBlock.resetFade();
 
-				    // Cancel old keep-damage-alive task
-				    if (damageBlock.keepBlockDamageAliveTaskId != -1) {
-					Bukkit.getScheduler().cancelTask(damageBlock.keepBlockDamageAliveTaskId);
-					damageBlock.keepBlockDamageAliveTaskId = -1;
+				    // Prevent duplicate animations on the same block when player doesn't stop breaking
+				    if (!damageBlock.isDamaged())
+					damageBlock.isNoCancel = true;
+
+				    // Start new task
+				    BukkitTask task = new ShowCurrentBlockDamageTask(p, damageBlock).runTaskTimer(plugin, 0, 2);
+				    p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
+
+				} else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
+
+				    // Clean old tasks
+				    if (p.hasMetadata("showCurrentDamageTaskId")) {
+					Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+					p.removeMetadata("showCurrentDamageTaskId", plugin);
 				    }
 
-				    // Start the task which prevents block damage from disappearing
-				    BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, damageBlock).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
-					    BetterBlockBreaking.blockDamageUpdateDelay);
-				    damageBlock.keepBlockDamageAliveTaskId = aliveTask.getTaskId();
-				}
-				damageBlock.isNoCancel = false;
+				    // Player cancelled breaking
+				    if (damageBlock.isNoCancel && type == EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
 
-				// Clean metadata
-				p.removeMetadata("BlockBeginDestroy", plugin);
+					// Load block "monster", used for displaying the damage on the block
+					WorldServer world = ((CraftWorld) damageBlock.getWorld()).getHandle();
+					EntityLiving entity = damageBlock.getEntity();
+					if (entity == null) {
+					    entity = new EntityChicken(world);
+					    world.addEntity(entity, SpawnReason.CUSTOM);
+					    damageBlock.setEntity(entity);
+					}
+
+					// Send damage packet
+					float currentDamage = damageBlock.getDamage();
+					((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(posLocation.getX(), posLocation.getY(), posLocation.getZ(), 120, world.dimension,
+						new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) currentDamage));
+
+					// Cancel old keep-damage-alive task
+					if (damageBlock.keepBlockDamageAliveTaskId != -1) {
+					    Bukkit.getScheduler().cancelTask(damageBlock.keepBlockDamageAliveTaskId);
+					    damageBlock.keepBlockDamageAliveTaskId = -1;
+					}
+
+					// Start the task which prevents block damage from disappearing
+					BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, damageBlock).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
+						BetterBlockBreaking.blockDamageUpdateDelay);
+					damageBlock.keepBlockDamageAliveTaskId = aliveTask.getTaskId();
+				    }
+				    damageBlock.isNoCancel = false;
+
+				    // Clean metadata
+				    p.removeMetadata("BlockBeginDestroy", plugin);
+				}
 			    }
 			};
 		    };
@@ -244,14 +248,10 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
 	return;
-	/*if (e.getPlayer().getName().equals("gustav9797") && e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getPlayer().isSneaking()) {
-	    Player p = e.getPlayer();
-	    DamageBlock block = damageBlocks.get(e.getClickedBlock().getLocation());
-	    if (block != null) {
-		p.sendMessage("block damage: " + block.getDamage());
-	    } else
-		p.sendMessage("No damage block");
-	}*/
+	/*
+	 * if (e.getPlayer().getName().equals("gustav9797") && e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getPlayer().isSneaking()) { Player p = e.getPlayer(); DamageBlock block =
+	 * damageBlocks.get(e.getClickedBlock().getLocation()); if (block != null) { p.sendMessage("block damage: " + block.getDamage()); } else p.sendMessage("No damage block"); }
+	 */
     }
 
     @EventHandler
