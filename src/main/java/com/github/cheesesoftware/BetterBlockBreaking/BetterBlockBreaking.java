@@ -13,14 +13,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 
-import net.minecraft.server.v1_8_R3.BlockPosition;
-import net.minecraft.server.v1_8_R3.Entity;
-import net.minecraft.server.v1_8_R3.EntityChicken;
-import net.minecraft.server.v1_8_R3.EntityLiving;
-import net.minecraft.server.v1_8_R3.EntityTNTPrimed;
-import net.minecraft.server.v1_8_R3.PacketPlayInBlockDig.EnumPlayerDigType;
-import net.minecraft.server.v1_8_R3.PacketPlayOutBlockBreakAnimation;
-import net.minecraft.server.v1_8_R3.WorldServer;
+import net.minecraft.server.v1_9_R1.BlockPosition;
+import net.minecraft.server.v1_9_R1.Entity;
+import net.minecraft.server.v1_9_R1.EntityChicken;
+import net.minecraft.server.v1_9_R1.EntityLiving;
+import net.minecraft.server.v1_9_R1.EntityTNTPrimed;
+import net.minecraft.server.v1_9_R1.PacketPlayInBlockDig.EnumPlayerDigType;
+import net.minecraft.server.v1_9_R1.PacketPlayOutBlockBreakAnimation;
+import net.minecraft.server.v1_9_R1.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -29,9 +29,9 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.v1_8_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_8_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_9_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_9_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_9_R1.entity.CraftEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -70,263 +70,263 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     public HashMap<Location, DamageBlock> damageBlocks = new HashMap<Location, DamageBlock>();
 
     public void onEnable() {
-	this.worldGuard = this.getWorldGuard();
+        this.worldGuard = this.getWorldGuard();
 
-	this.saveDefaultConfig();
-	this.reloadCustomConfig();
+        this.saveDefaultConfig();
+        this.reloadCustomConfig();
 
-	Bukkit.getServer().getPluginManager().registerEvents(this, this);
+        Bukkit.getServer().getPluginManager().registerEvents(this, this);
 
-	BukkitTask task = new RemoveOldDamagedBlocksTask(this).runTaskTimer(this, 0, 20);
-	this.removeOldDamagedBlocksTaskId = task.getTaskId();
+        BukkitTask task = new RemoveOldDamagedBlocksTask(this).runTaskTimer(this, 0, 20);
+        this.removeOldDamagedBlocksTaskId = task.getTaskId();
     }
 
     public void onLoad() {
-	protocolManager = ProtocolLibrary.getProtocolManager();
-	protocolManager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.BLOCK_DIG) {
-	    @Override
-	    public void onPacketReceiving(PacketEvent e) {
-		if (e.getPacketType() == PacketType.Play.Client.BLOCK_DIG) {
-		    final PacketContainer packet = e.getPacket();
-		    final PacketEvent event = e;
-		    final HashMap<Location, DamageBlock> damageBlocks = ((BetterBlockBreaking) plugin).damageBlocks;
-		    BukkitRunnable runnable = new BukkitRunnable() {
+        protocolManager = ProtocolLibrary.getProtocolManager();
+        protocolManager.addPacketListener(new PacketAdapter(this, ListenerPriority.NORMAL, PacketType.Play.Client.BLOCK_DIG) {
+            @Override
+            public void onPacketReceiving(PacketEvent e) {
+                if (e.getPacketType() == PacketType.Play.Client.BLOCK_DIG) {
+                    final PacketContainer packet = e.getPacket();
+                    final PacketEvent event = e;
+                    final HashMap<Location, DamageBlock> damageBlocks = ((BetterBlockBreaking) plugin).damageBlocks;
+                    BukkitRunnable runnable = new BukkitRunnable() {
 
-			@Override
-			public void run() {
-			    StructureModifier<EnumPlayerDigType> data = packet.getSpecificModifier(EnumPlayerDigType.class);
-			    StructureModifier<BlockPosition> dataTemp = packet.getSpecificModifier(BlockPosition.class);
+                        @Override
+                        public void run() {
+                            StructureModifier<EnumPlayerDigType> data = packet.getSpecificModifier(EnumPlayerDigType.class);
+                            StructureModifier<BlockPosition> dataTemp = packet.getSpecificModifier(BlockPosition.class);
 
-			    EnumPlayerDigType type = data.getValues().get(0);
-			    Player p = event.getPlayer();
-			    BlockPosition pos = dataTemp.getValues().get(0);
+                            EnumPlayerDigType type = data.getValues().get(0);
+                            Player p = event.getPlayer();
+                            BlockPosition pos = dataTemp.getValues().get(0);
 
-			    Location posLocation = new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ());
+                            Location posLocation = new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ());
 
-			    if (worldGuard != null && !((com.sk89q.worldguard.bukkit.WorldGuardPlugin) worldGuard).canBuild(p, posLocation)) {
-				return;
-			    }
+                            if (worldGuard != null && !((com.sk89q.worldguard.bukkit.WorldGuardPlugin) worldGuard).canBuild(p, posLocation)) {
+                                return;
+                            }
 
-			    if (p.getGameMode() == GameMode.SURVIVAL) {
+                            if (p.getGameMode() == GameMode.SURVIVAL) {
 
-				DamageBlock damageBlock = damageBlocks.get(posLocation);
-				if (damageBlock == null) {
-				    damageBlock = new DamageBlock(posLocation);
-				    damageBlocks.put(posLocation, damageBlock);
-				}
+                                DamageBlock damageBlock = damageBlocks.get(posLocation);
+                                if (damageBlock == null) {
+                                    damageBlock = new DamageBlock(posLocation);
+                                    damageBlocks.put(posLocation, damageBlock);
+                                }
 
-				if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
-				    // Clean old task
-				    p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
-				    if (p.hasMetadata("showCurrentDamageTaskId")) {
-					Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
-					p.removeMetadata("showCurrentDamageTaskId", plugin);
-				    }
+                                if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
+                                    // Clean old task
+                                    p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
+                                    if (p.hasMetadata("showCurrentDamageTaskId")) {
+                                        Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+                                        p.removeMetadata("showCurrentDamageTaskId", plugin);
+                                    }
 
-				    damageBlock.resetFade();
+                                    damageBlock.resetFade();
 
-				    // Prevent duplicate animations on the same block when player doesn't stop breaking
-				    if (!damageBlock.isDamaged())
-					damageBlock.isNoCancel = true;
+                                    // Prevent duplicate animations on the same block when player doesn't stop breaking
+                                    if (!damageBlock.isDamaged())
+                                        damageBlock.isNoCancel = true;
 
-				    // Start new task
-				    BukkitTask task = new ShowCurrentBlockDamageTask(p, damageBlock).runTaskTimer(plugin, 0, 2);
-				    p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
+                                    // Start new task
+                                    BukkitTask task = new ShowCurrentBlockDamageTask(p, damageBlock).runTaskTimer(plugin, 0, 2);
+                                    p.setMetadata("showCurrentDamageTaskId", new FixedMetadataValue(plugin, task.getTaskId()));
 
-				} else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
+                                } else if (type == EnumPlayerDigType.ABORT_DESTROY_BLOCK || type == EnumPlayerDigType.STOP_DESTROY_BLOCK) {
 
-				    // Clean old tasks
-				    if (p.hasMetadata("showCurrentDamageTaskId")) {
-					Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
-					p.removeMetadata("showCurrentDamageTaskId", plugin);
-				    }
+                                    // Clean old tasks
+                                    if (p.hasMetadata("showCurrentDamageTaskId")) {
+                                        Bukkit.getScheduler().cancelTask(p.getMetadata("showCurrentDamageTaskId").get(0).asInt());
+                                        p.removeMetadata("showCurrentDamageTaskId", plugin);
+                                    }
 
-				    // Player cancelled breaking
-				    if (damageBlock.isNoCancel && type == EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
+                                    // Player cancelled breaking
+                                    if (damageBlock.isNoCancel && type == EnumPlayerDigType.ABORT_DESTROY_BLOCK) {
 
-					// Load block "monster", used for displaying the damage on the block
-					WorldServer world = ((CraftWorld) damageBlock.getWorld()).getHandle();
-					EntityLiving entity = damageBlock.getEntity();
-					if (entity == null) {
-					    entity = new EntityChicken(world);
-					    world.addEntity(entity, SpawnReason.CUSTOM);
-					    damageBlock.setEntity(entity);
-					}
+                                        // Load block "monster", used for displaying the damage on the block
+                                        WorldServer world = ((CraftWorld) damageBlock.getWorld()).getHandle();
+                                        EntityLiving entity = damageBlock.getEntity();
+                                        if (entity == null) {
+                                            entity = new EntityChicken(world);
+                                            world.addEntity(entity, SpawnReason.CUSTOM);
+                                            damageBlock.setEntity(entity);
+                                        }
 
-					// Send damage packet
-					float currentDamage = damageBlock.getDamage();
-					((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(posLocation.getX(), posLocation.getY(), posLocation.getZ(), 120, world.dimension,
-						new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) currentDamage));
+                                        // Send damage packet
+                                        float currentDamage = damageBlock.getDamage();
+                                        ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(null, posLocation.getX(), posLocation.getY(), posLocation.getZ(), 120, world.dimension,
+                                                new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) currentDamage));
 
-					// Cancel old keep-damage-alive task
-					if (damageBlock.keepBlockDamageAliveTaskId != -1) {
-					    Bukkit.getScheduler().cancelTask(damageBlock.keepBlockDamageAliveTaskId);
-					    damageBlock.keepBlockDamageAliveTaskId = -1;
-					}
+                                        // Cancel old keep-damage-alive task
+                                        if (damageBlock.keepBlockDamageAliveTaskId != -1) {
+                                            Bukkit.getScheduler().cancelTask(damageBlock.keepBlockDamageAliveTaskId);
+                                            damageBlock.keepBlockDamageAliveTaskId = -1;
+                                        }
 
-					// Start the task which prevents block damage from disappearing
-					BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, damageBlock).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
-						BetterBlockBreaking.blockDamageUpdateDelay);
-					damageBlock.keepBlockDamageAliveTaskId = aliveTask.getTaskId();
-				    }
-				    damageBlock.isNoCancel = false;
+                                        // Start the task which prevents block damage from disappearing
+                                        BukkitTask aliveTask = new KeepBlockDamageAliveTask((JavaPlugin) plugin, damageBlock).runTaskTimer(plugin, BetterBlockBreaking.blockDamageUpdateDelay,
+                                                BetterBlockBreaking.blockDamageUpdateDelay);
+                                        damageBlock.keepBlockDamageAliveTaskId = aliveTask.getTaskId();
+                                    }
+                                    damageBlock.isNoCancel = false;
 
-				    // Clean metadata
-				    p.removeMetadata("BlockBeginDestroy", plugin);
-				}
-			    }
-			};
-		    };
-		    runnable.runTaskLater(plugin, 0);
-		}
-	    }
-	});
+                                    // Clean metadata
+                                    p.removeMetadata("BlockBeginDestroy", plugin);
+                                }
+                            }
+                        };
+                    };
+                    runnable.runTaskLater(plugin, 0);
+                }
+            }
+        });
     }
 
     public void onDisable() {
-	Bukkit.getScheduler().cancelTask(this.removeOldDamagedBlocksTaskId);
+        Bukkit.getScheduler().cancelTask(this.removeOldDamagedBlocksTaskId);
     }
 
     public void reloadCustomConfig() {
-	if (customConfigFile == null) {
-	    customConfigFile = new File(getDataFolder(), "config.yml");
-	}
-	customConfig = YamlConfiguration.loadConfiguration(customConfigFile);
+        if (customConfigFile == null) {
+            customConfigFile = new File(getDataFolder(), "config.yml");
+        }
+        customConfig = YamlConfiguration.loadConfiguration(customConfigFile);
 
-	if (customConfig.contains("millisecondsBeforeBeginFade"))
-	    RemoveOldDamagedBlocksTask.millisecondsBeforeBeginFade = customConfig.getLong("millisecondsBeforeBeginFade");
+        if (customConfig.contains("millisecondsBeforeBeginFade"))
+            RemoveOldDamagedBlocksTask.millisecondsBeforeBeginFade = customConfig.getLong("millisecondsBeforeBeginFade");
 
-	if (customConfig.contains("millisecondsBetweenFade"))
-	    RemoveOldDamagedBlocksTask.millisecondsBetweenFade = customConfig.getLong("millisecondsBetweenFade");
+        if (customConfig.contains("millisecondsBetweenFade"))
+            RemoveOldDamagedBlocksTask.millisecondsBetweenFade = customConfig.getLong("millisecondsBetweenFade");
 
-	if (customConfig.contains("damageDecreasePerFade"))
-	    RemoveOldDamagedBlocksTask.damageDecreasePerFade = customConfig.getInt("damageDecreasePerFade");
+        if (customConfig.contains("damageDecreasePerFade"))
+            RemoveOldDamagedBlocksTask.damageDecreasePerFade = customConfig.getInt("damageDecreasePerFade");
 
-	if (customConfig.contains("useCustomExplosions"))
-	    this.useCustomExplosions = customConfig.getBoolean("useCustomExplosions");
+        if (customConfig.contains("useCustomExplosions"))
+            this.useCustomExplosions = customConfig.getBoolean("useCustomExplosions");
 
-	// Look for defaults in the jar
-	Reader defConfigStream;
-	try {
-	    defConfigStream = new InputStreamReader(this.getResource("config.yml"), "UTF8");
-	    if (defConfigStream != null) {
-		YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
-		customConfig.setDefaults(defConfig);
-	    }
-	} catch (UnsupportedEncodingException e) {
-	    e.printStackTrace();
-	}
+        // Look for defaults in the jar
+        Reader defConfigStream;
+        try {
+            defConfigStream = new InputStreamReader(this.getResource("config.yml"), "UTF8");
+            if (defConfigStream != null) {
+                YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(defConfigStream);
+                customConfig.setDefaults(defConfig);
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
     }
 
     public FileConfiguration getCustomConfig() {
-	if (customConfig == null) {
-	    reloadCustomConfig();
-	}
-	return customConfig;
+        if (customConfig == null) {
+            reloadCustomConfig();
+        }
+        return customConfig;
     }
 
     public void saveCustomConfig() {
-	if (customConfig == null || customConfigFile == null) {
-	    return;
-	}
-	try {
-	    getCustomConfig().save(customConfigFile);
-	} catch (IOException ex) {
-	    getLogger().log(Level.SEVERE, "Could not save config to " + customConfigFile, ex);
-	}
+        if (customConfig == null || customConfigFile == null) {
+            return;
+        }
+        try {
+            getCustomConfig().save(customConfigFile);
+        } catch (IOException ex) {
+            getLogger().log(Level.SEVERE, "Could not save config to " + customConfigFile, ex);
+        }
     }
 
     public void saveDefaultConfig() {
-	if (customConfigFile == null) {
-	    customConfigFile = new File(getDataFolder(), "config.yml");
-	}
-	if (!customConfigFile.exists()) {
-	    this.saveResource("config.yml", false);
-	}
+        if (customConfigFile == null) {
+            customConfigFile = new File(getDataFolder(), "config.yml");
+        }
+        if (!customConfigFile.exists()) {
+            this.saveResource("config.yml", false);
+        }
     }
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
-	return;
-	/*
-	 * if (e.getPlayer().getName().equals("gustav9797") && e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getPlayer().isSneaking()) { Player p = e.getPlayer(); DamageBlock block =
-	 * damageBlocks.get(e.getClickedBlock().getLocation()); if (block != null) { p.sendMessage("block damage: " + block.getDamage()); } else p.sendMessage("No damage block"); }
-	 */
+        return;
+        /*
+         * if (e.getPlayer().getName().equals("gustav9797") && e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getPlayer().isSneaking()) { Player p = e.getPlayer(); DamageBlock block =
+         * damageBlocks.get(e.getClickedBlock().getLocation()); if (block != null) { p.sendMessage("block damage: " + block.getDamage()); } else p.sendMessage("No damage block"); }
+         */
     }
 
     @EventHandler
     public void onPlayerDestroyBlock(BlockBreakEvent event) {
-	Block block = event.getBlock();
-	this.getDamageBlock(block.getLocation()).removeAllDamage();
+        Block block = event.getBlock();
+        this.getDamageBlock(block.getLocation()).removeAllDamage();
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityExplode(EntityExplodeEvent event) {
-	if (this.useCustomExplosions && !event.isCancelled() && event.blockList().size() > 0) {
-	    final List<Block> blocks = new ArrayList<Block>(event.blockList());
-	    event.blockList().clear();
-	    event.setYield(0);
+        if (this.useCustomExplosions && !event.isCancelled() && event.blockList().size() > 0) {
+            final List<Block> blocks = new ArrayList<Block>(event.blockList());
+            event.blockList().clear();
+            event.setYield(0);
 
-	    final EntityExplodeEvent e = event;
-	    final Location explosion = event.getLocation();
-	    final Map<Location, Material> materials = new HashMap<Location, Material>();
-	    for (Block block : blocks)
-		materials.put(block.getLocation(), block.getType());
+            final EntityExplodeEvent e = event;
+            final Location explosion = event.getLocation();
+            final Map<Location, Material> materials = new HashMap<Location, Material>();
+            for (Block block : blocks)
+                materials.put(block.getLocation(), block.getType());
 
-	    BukkitRunnable runnable = new BukkitRunnable() {
+            BukkitRunnable runnable = new BukkitRunnable() {
 
-		@Override
-		public void run() {
-		    Random r = new Random();
-		    for (Block block : blocks) {
+                @Override
+                public void run() {
+                    Random r = new Random();
+                    for (Block block : blocks) {
 
-			WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
-			BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
+                        WorldServer world = ((CraftWorld) block.getWorld()).getHandle();
+                        BlockPosition pos = new BlockPosition(block.getX(), block.getY(), block.getZ());
 
-			if (block.getType() == Material.TNT) {
-			    Entity entity = ((CraftEntity) e.getEntity()).getHandle();
-			    EntityLiving shit = entity == null ? null : (entity instanceof EntityTNTPrimed ? ((EntityTNTPrimed) entity).getSource()
-				    : (entity instanceof EntityLiving ? (EntityLiving) entity : null));
-			    EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) pos.getX() + 0.5F), (double) ((float) pos.getY() + 0.5F),
-				    (double) ((float) pos.getZ() + 0.5F), shit);
+                        if (block.getType() == Material.TNT) {
+                            Entity entity = ((CraftEntity) e.getEntity()).getHandle();
+                            EntityLiving shit = entity == null ? null : (entity instanceof EntityTNTPrimed ? ((EntityTNTPrimed) entity).getSource()
+                                    : (entity instanceof EntityLiving ? (EntityLiving) entity : null));
+                            EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) pos.getX() + 0.5F), (double) ((float) pos.getY() + 0.5F),
+                                    (double) ((float) pos.getZ() + 0.5F), shit);
 
-			    entitytntprimed.fuseTicks = world.random.nextInt(entitytntprimed.fuseTicks / 4) + entitytntprimed.fuseTicks / 8;
-			    world.addEntity(entitytntprimed);
-			}
+                            entitytntprimed.fireTicks = world.random.nextInt(entitytntprimed.fireTicks / 4) + entitytntprimed.fireTicks / 8;
+                            world.addEntity(entitytntprimed);
+                        }
 
-			double distance = explosion.distance(block.getLocation());
-			DamageBlock damageBlock = getDamageBlock(block.getLocation());
-			damageBlock.setDamage((float) ((14 + (r.nextInt(5) - 2) - (2.0f * distance)) + damageBlock.getDamage()), null);
-		    }
-		}
-	    };
-	    runnable.runTaskLater(this, 0);
-	}
+                        double distance = explosion.distance(block.getLocation());
+                        DamageBlock damageBlock = getDamageBlock(block.getLocation());
+                        damageBlock.setDamage((float) ((14 + (r.nextInt(5) - 2) - (2.0f * distance)) + damageBlock.getDamage()), null);
+                    }
+                }
+            };
+            runnable.runTaskLater(this, 0);
+        }
     }
 
     public DamageBlock getDamageBlock(Location location) {
-	DamageBlock damageBlock = this.damageBlocks.get(location);
-	if (damageBlock == null) {
-	    damageBlock = new DamageBlock(location);
-	    damageBlocks.put(location, damageBlock);
-	}
-	return damageBlock;
+        DamageBlock damageBlock = this.damageBlocks.get(location);
+        if (damageBlock == null) {
+            damageBlock = new DamageBlock(location);
+            damageBlocks.put(location, damageBlock);
+        }
+        return damageBlock;
     }
 
     public static BetterBlockBreaking getPlugin() {
-	return (BetterBlockBreaking) Bukkit.getPluginManager().getPlugin("BetterBlockBreaking");
+        return (BetterBlockBreaking) Bukkit.getPluginManager().getPlugin("BetterBlockBreaking");
     }
 
     private Plugin getWorldGuard() {
-	Plugin plugin = getServer().getPluginManager().getPlugin("WorldGuard");
+        Plugin plugin = getServer().getPluginManager().getPlugin("WorldGuard");
 
-	// WorldGuard may not be loaded
-	if (plugin == null || !(plugin instanceof com.sk89q.worldguard.bukkit.WorldGuardPlugin)) {
-	    getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] WorldGuard could not be loaded. Disabling interaction.");
-	    return null; // Maybe you want throw an exception instead
-	} else
-	    getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled WorldGuard interaction.");
+        // WorldGuard may not be loaded
+        if (plugin == null || !(plugin instanceof com.sk89q.worldguard.bukkit.WorldGuardPlugin)) {
+            getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] WorldGuard could not be loaded. Disabling interaction.");
+            return null; // Maybe you want throw an exception instead
+        } else
+            getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled WorldGuard interaction.");
 
-	return plugin;
+        return plugin;
     }
 }
