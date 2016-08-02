@@ -1,13 +1,17 @@
 package com.github.cheesesoftware.BetterBlockBreaking;
 
+import java.lang.reflect.Field;
 import java.util.Date;
 
 import net.minecraft.server.v1_10_R1.BlockPosition;
 import net.minecraft.server.v1_10_R1.EntityChicken;
 import net.minecraft.server.v1_10_R1.EntityLiving;
 import net.minecraft.server.v1_10_R1.IBlockData;
+import net.minecraft.server.v1_10_R1.MinecraftKey;
 import net.minecraft.server.v1_10_R1.PacketPlayOutBlockBreakAnimation;
 import net.minecraft.server.v1_10_R1.PacketPlayOutBlockChange;
+import net.minecraft.server.v1_10_R1.SoundEffect;
+import net.minecraft.server.v1_10_R1.SoundEffectType;
 import net.minecraft.server.v1_10_R1.TileEntity;
 import net.minecraft.server.v1_10_R1.WorldServer;
 
@@ -160,10 +164,22 @@ public class DamageBlock {
                 } else {
                     this.removeAllDamage();
 
-                    // Play block break sound
-                    String sound = world.getType(pos).getBlock().w().toString();
-                    breaker.getWorld().playSound(new Location(breaker.getWorld(), pos.getX(), pos.getY(), pos.getZ()), sound, 2.0f, 1.0f);
-                    // world.makeSound(pos.getX(), pos.getY(), pos.getZ(), sound, 2.0f, 1.0f);
+                    try {
+                        // Play block break sound
+                        Field f = SoundEffectType.class.getDeclaredField("o");
+                        f.setAccessible(true);
+                        SoundEffect soundEffect = (SoundEffect) f.get(world.getType(pos).getBlock().w());
+
+                        Field f2 = SoundEffect.class.getDeclaredField("b");
+                        f2.setAccessible(true);
+                        MinecraftKey minecraftKey = (MinecraftKey) f2.get(soundEffect);
+
+                        String sound = minecraftKey.a();
+                        breaker.getWorld().playSound(new Location(breaker.getWorld(), pos.getX(), pos.getY(), pos.getZ()), sound, 2.0f, 1.0f);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
                     // Use the proper function to break block, this also applies any effects the item the player is holding has on the block
                     ((CraftPlayer) breaker).getHandle().playerInteractManager.breakBlock(pos);
