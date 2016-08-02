@@ -13,14 +13,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 
-import net.minecraft.server.v1_9_R1.BlockPosition;
-import net.minecraft.server.v1_9_R1.Entity;
-import net.minecraft.server.v1_9_R1.EntityChicken;
-import net.minecraft.server.v1_9_R1.EntityLiving;
-import net.minecraft.server.v1_9_R1.EntityTNTPrimed;
-import net.minecraft.server.v1_9_R1.PacketPlayInBlockDig.EnumPlayerDigType;
-import net.minecraft.server.v1_9_R1.PacketPlayOutBlockBreakAnimation;
-import net.minecraft.server.v1_9_R1.WorldServer;
+import net.minecraft.server.v1_10_R1.BlockPosition;
+import net.minecraft.server.v1_10_R1.Entity;
+import net.minecraft.server.v1_10_R1.EntityChicken;
+import net.minecraft.server.v1_10_R1.EntityLiving;
+import net.minecraft.server.v1_10_R1.EntityTNTPrimed;
+import net.minecraft.server.v1_10_R1.PacketPlayInBlockDig.EnumPlayerDigType;
+import net.minecraft.server.v1_10_R1.PacketPlayOutBlockBreakAnimation;
+import net.minecraft.server.v1_10_R1.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -29,9 +29,9 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.v1_9_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_9_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_9_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_10_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_10_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_10_R1.entity.CraftEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -285,12 +285,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
                         if (block.getType() == Material.TNT) {
                             Entity entity = ((CraftEntity) e.getEntity()).getHandle();
-                            EntityLiving shit = entity == null ? null : (entity instanceof EntityTNTPrimed ? ((EntityTNTPrimed) entity).getSource()
-                                    : (entity instanceof EntityLiving ? (EntityLiving) entity : null));
+                            EntityLiving shit = entity == null ? null
+                                    : (entity instanceof EntityTNTPrimed ? ((EntityTNTPrimed) entity).getSource() : (entity instanceof EntityLiving ? (EntityLiving) entity : null));
                             EntityTNTPrimed entitytntprimed = new EntityTNTPrimed(world, (double) ((float) pos.getX() + 0.5F), (double) ((float) pos.getY() + 0.5F),
                                     (double) ((float) pos.getZ() + 0.5F), shit);
 
-                            entitytntprimed.fireTicks = world.random.nextInt(entitytntprimed.fireTicks / 4) + entitytntprimed.fireTicks / 8;
+                            entitytntprimed.fireTicks = world.random.nextInt(Math.max(entitytntprimed.fireTicks / 4, 1)) + entitytntprimed.fireTicks / 8;
                             world.addEntity(entitytntprimed);
                         }
 

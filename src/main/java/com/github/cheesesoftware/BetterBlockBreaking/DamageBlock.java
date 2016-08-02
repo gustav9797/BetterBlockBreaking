@@ -2,22 +2,23 @@ package com.github.cheesesoftware.BetterBlockBreaking;
 
 import java.util.Date;
 
-import net.minecraft.server.v1_9_R1.BlockPosition;
-import net.minecraft.server.v1_9_R1.EntityChicken;
-import net.minecraft.server.v1_9_R1.EntityLiving;
-import net.minecraft.server.v1_9_R1.PacketPlayOutBlockBreakAnimation;
-import net.minecraft.server.v1_9_R1.PacketPlayOutBlockChange;
-import net.minecraft.server.v1_9_R1.TileEntity;
-import net.minecraft.server.v1_9_R1.WorldServer;
+import net.minecraft.server.v1_10_R1.BlockPosition;
+import net.minecraft.server.v1_10_R1.EntityChicken;
+import net.minecraft.server.v1_10_R1.EntityLiving;
+import net.minecraft.server.v1_10_R1.IBlockData;
+import net.minecraft.server.v1_10_R1.PacketPlayOutBlockBreakAnimation;
+import net.minecraft.server.v1_10_R1.PacketPlayOutBlockChange;
+import net.minecraft.server.v1_10_R1.TileEntity;
+import net.minecraft.server.v1_10_R1.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_9_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_9_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_9_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_10_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_10_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_10_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -100,7 +101,9 @@ public class DamageBlock {
         WorldServer world = ((CraftWorld) this.l.getWorld()).getHandle();
         BlockPosition pos = new BlockPosition(getX(), getY(), getZ());
 
-        if (damage > 10 || (damage > 0 && world.getType(pos).getBlock().b(null, world, pos) <= 0)) {
+        // || it is a block with no strength, break immediately
+        IBlockData blockData = world.getType(pos);
+        if (damage >= 10 || (damage > 0 && blockData.getBlock().b(blockData, world, pos) <= 0)) {
             this.breakBlock(breaker);
             return;
         } else {
@@ -114,9 +117,11 @@ public class DamageBlock {
             }
 
             // Send damage packet
-            if (!this.isNoCancel)
+            if (!this.isNoCancel) {
                 ((CraftServer) Bukkit.getServer()).getHandle().sendPacketNearby(null, getX(), getY(), getZ(), 120, world.dimension,
                         new PacketPlayOutBlockBreakAnimation(entity.getId(), pos, (int) this.damage));
+                // Bukkit.getLogger().info("sent damage packet " + this.damage);
+            }
 
             // Cancel old task
             if (this.keepBlockDamageAliveTaskId != -1) {
