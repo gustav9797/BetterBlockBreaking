@@ -27,7 +27,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.craftbukkit.v1_12_R1.CraftServer;
@@ -58,7 +57,6 @@ import com.comphenix.protocol.reflect.StructureModifier;
 
 import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.HandledBlock;
 import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.SlimefunItem;
-import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.UnregisterReason;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 
 public class BetterBlockBreaking extends JavaPlugin implements Listener {
@@ -349,6 +347,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
         // Slimefun may not be loaded
         if (plugin == null || !(plugin instanceof me.mrCookieSlime.Slimefun.SlimefunStartup)) {
+            getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Slimefun could not be loaded. Disabling interaction.");
             return null; // Maybe you want throw an exception instead
         } else
             getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled Slimefun interaction.");
