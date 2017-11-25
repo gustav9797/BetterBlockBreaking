@@ -126,7 +126,7 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
                                     }
                                     damageBlocks.put(posLocation, damageBlock);
                                 }
-                                
+
                                 if (type == EnumPlayerDigType.START_DESTROY_BLOCK) {
                                     // Clean old task
                                     p.setMetadata("BlockBeginDestroy", new FixedMetadataValue(plugin, new Date()));
