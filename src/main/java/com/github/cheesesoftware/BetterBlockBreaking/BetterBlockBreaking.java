@@ -55,6 +55,10 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
 
+import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.HandledBlock;
+import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.SlimefunItem;
+import me.mrCookieSlime.Slimefun.api.BlockStorage;
+
 public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     public static int blockDamageUpdateDelay = 5 * 20; // seconds * ticks
@@ -66,11 +70,13 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     private File customConfigFile = null;
 
     public Plugin worldGuard = null;
+    public Plugin slimefun = null;
 
     public HashMap<Location, DamageBlock> damageBlocks = new HashMap<Location, DamageBlock>();
 
     public void onEnable() {
         this.worldGuard = this.getWorldGuard();
+        this.slimefun = this.getSlimefun();
 
         this.saveDefaultConfig();
         this.reloadCustomConfig();
@@ -112,6 +118,12 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
                                 DamageBlock damageBlock = damageBlocks.get(posLocation);
                                 if (damageBlock == null) {
                                     damageBlock = new DamageBlock(posLocation);
+                                    if (slimefun != null) {
+                                    	SlimefunItem sfItem = BlockStorage.check(damageBlock.getLocation().getBlock());
+                            			if (sfItem != null && !(sfItem instanceof HandledBlock)) {
+                            				return;
+                            			}
+                                    }
                                     damageBlocks.put(posLocation, damageBlock);
                                 }
 
@@ -326,6 +338,19 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
             return null; // Maybe you want throw an exception instead
         } else
             getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled WorldGuard interaction.");
+
+        return plugin;
+    }
+
+    private Plugin getSlimefun() {
+        Plugin plugin = getServer().getPluginManager().getPlugin("Slimefun");
+
+        // Slimefun may not be loaded
+        if (plugin == null || !(plugin instanceof me.mrCookieSlime.Slimefun.SlimefunStartup)) {
+            getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Slimefun could not be loaded. Disabling interaction.");
+            return null; // Maybe you want throw an exception instead
+        } else
+            getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled Slimefun interaction.");
 
         return plugin;
     }
