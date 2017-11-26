@@ -95,7 +95,7 @@
         <dependency>
             <groupId>me.mrCookieSlime</groupId>
             <artifactId>Slimefun</artifactId>
-            <version>4.1.10</version>
+            <version>4.1.12</version>
             <scope>provided</scope>
         </dependency>
         </dependencies>
