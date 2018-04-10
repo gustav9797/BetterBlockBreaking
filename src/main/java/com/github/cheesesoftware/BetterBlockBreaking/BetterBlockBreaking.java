@@ -118,12 +118,14 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
                                 DamageBlock damageBlock = damageBlocks.get(posLocation);
                                 if (damageBlock == null) {
                                     damageBlock = new DamageBlock(posLocation);
+                                    
+                                    // Prevent block duplication in Slimefun
                                     if (slimefun != null) {
-                                    	SlimefunItem sfItem = BlockStorage.check(damageBlock.getLocation().getBlock());
-                            			if (sfItem != null && !(sfItem instanceof HandledBlock)) {
-                            				return;
-                            			}
+                                        SlimefunItem sfItem = BlockStorage.check(damageBlock.getLocation().getBlock());
+                                        if (sfItem != null)
+                                            return;
                                     }
+                                    
                                     damageBlocks.put(posLocation, damageBlock);
                                 }
 
