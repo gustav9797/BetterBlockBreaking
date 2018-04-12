@@ -1,5 +1,5 @@
 name: BetterBlockBreaking
 main: com.github.cheesesoftware.BetterBlockBreaking.BetterBlockBreaking
-version: 6.5
+version: 6.6.0
 depend: [ProtocolLib]
-softdepend: [WorldGuard]
+softdepend: [WorldGuard, Slimefun]

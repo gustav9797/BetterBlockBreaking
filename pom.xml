@@ -6,15 +6,15 @@
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <resources>
-			<resource>
-				<targetPath>.</targetPath>
-				<filtering>true</filtering>
-				<directory>src/main/resources</directory>
-				<includes>
-					<include>plugin.yml</include>
-					<include>config.yml</include>
-				</includes>
-			</resource>
+                        <resource>
+                                <targetPath>.</targetPath>
+                                <filtering>true</filtering>
+                                <directory>src/main/resources</directory>
+                                <includes>
+                                        <include>plugin.yml</include>
+                                        <include>config.yml</include>
+                                </includes>
+                        </resource>
     </resources>
     <plugins>
       <plugin>
@@ -36,61 +36,66 @@
     </plugins>
   </build>
   
-  	<repositories>
+        <repositories>
         <repository>
             <id>dmulloy2-repo</id>
             <url>http://repo.dmulloy2.net/content/groups/public/</url>
         </repository>
-		<repository>
-			<id>spigot-repo</id>
-			<url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
-		</repository>
-		<repository>
-			<id>md_5-repo</id>
-			<url>http://repo.md-5.net/content/groups/public/</url>
-		</repository>
-		<repository>
-			<id>confuser-repo</id>
-			<url>http://ci.frostcast.net/plugin/repository/everything</url>
-		</repository>
-		<repository>
-			<id>bukkit-repo</id>
-			<url>http://repo.bukkit.org/content/groups/public/</url>
-		</repository>
-		<repository>
-			<id>craftbukkit-repo</id>
-			<url>http://maven.sk89q.com/repo/</url>
-		</repository>
-	    <repository>
-        	<id>sk89q-repo</id>
-        	<url>http://maven.sk89q.com/repo/</url>
-    	</repository>
-	</repositories>
-	
-	<dependencies>
+                <repository>
+                        <id>spigot-repo</id>
+                        <url>https://hub.spigotmc.org/nexus/content/groups/public/</url>
+                </repository>
+                <repository>
+                        <id>md_5-repo</id>
+                        <url>http://repo.md-5.net/content/groups/public/</url>
+                </repository>
+                <repository>
+                        <id>confuser-repo</id>
+                        <url>http://ci.frostcast.net/plugin/repository/everything</url>
+                </repository>
+                <repository>
+                        <id>bukkit-repo</id>
+                        <url>http://repo.bukkit.org/content/groups/public/</url>
+                </repository>
+                <repository>
+                        <id>craftbukkit-repo</id>
+                        <url>http://maven.sk89q.com/repo/</url>
+                </repository>
+            <repository>
+                <id>sk89q-repo</id>
+                <url>http://maven.sk89q.com/repo/</url>
+        </repository>
+        </repositories>
+        
+        <dependencies>
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>1.12.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-		<dependency>
+        <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot</artifactId>
             <version>1.12.2-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
-		</dependency>
-  		<dependency>
-    		<groupId>com.comphenix.protocol</groupId>
-    		<artifactId>ProtocolLib-API</artifactId>
-    		<version>4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.comphenix.protocol</groupId>
+            <artifactId>ProtocolLib-API</artifactId>
+            <version>4.0</version>
             <scope>provided</scope>
-  		</dependency>
-  		<dependency>
-        	<groupId>com.sk89q</groupId>
-        	<artifactId>worldguard</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sk89q</groupId>
+            <artifactId>worldguard</artifactId>
             <version>6.0.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-	</dependencies>
+        <dependency>
+            <groupId>com.github.TheBusyBiscuit</groupId>
+            <artifactId>Slimefun4</artifactId>
+            <version>4.1.14</version>
+        </dependency>
+        </dependencies>
 </project>
