@@ -3,27 +3,27 @@ package com.github.cheesesoftware.BetterBlockBreaking;
 import java.lang.reflect.Field;
 import java.util.Date;
 
-import net.minecraft.server.v1_13_R1.BlockPosition;
-import net.minecraft.server.v1_13_R1.EntityChicken;
-import net.minecraft.server.v1_13_R1.EntityLiving;
-import net.minecraft.server.v1_13_R1.IBlockAccess;
-import net.minecraft.server.v1_13_R1.IBlockData;
-import net.minecraft.server.v1_13_R1.MinecraftKey;
-import net.minecraft.server.v1_13_R1.PacketPlayOutBlockBreakAnimation;
-import net.minecraft.server.v1_13_R1.PacketPlayOutBlockChange;
-import net.minecraft.server.v1_13_R1.SoundEffect;
-import net.minecraft.server.v1_13_R1.SoundEffectType;
-import net.minecraft.server.v1_13_R1.TileEntity;
-import net.minecraft.server.v1_13_R1.WorldServer;
+import net.minecraft.server.v1_13_R2.BlockPosition;
+import net.minecraft.server.v1_13_R2.EntityChicken;
+import net.minecraft.server.v1_13_R2.EntityLiving;
+import net.minecraft.server.v1_13_R2.IBlockAccess;
+import net.minecraft.server.v1_13_R2.IBlockData;
+import net.minecraft.server.v1_13_R2.MinecraftKey;
+import net.minecraft.server.v1_13_R2.PacketPlayOutBlockBreakAnimation;
+import net.minecraft.server.v1_13_R2.PacketPlayOutBlockChange;
+import net.minecraft.server.v1_13_R2.SoundEffect;
+import net.minecraft.server.v1_13_R2.SoundEffectType;
+import net.minecraft.server.v1_13_R2.TileEntity;
+import net.minecraft.server.v1_13_R2.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_13_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_13_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_13_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_13_R2.CraftServer;
+import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
@@ -108,7 +108,7 @@ public class DamageBlock {
 
         // || it is a block with no strength, break immediately
         IBlockData blockData = world.getType(pos);
-        if (damage >= 10 || (damage > 0 && blockData.getBlock().d(blockData, world.b(), pos) <= 0)) {
+        if (damage >= 10 || (damage > 0 && blockData.getBlock().strength <= 0)) {
             this.breakBlock(breaker);
             return;
         } else {

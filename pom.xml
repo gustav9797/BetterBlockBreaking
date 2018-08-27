@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>BetterBlockBreaking</artifactId>
-  <version>6.6.0-1.13</version>
+  <version>6.6.0-1.13.1</version>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <resources>
@@ -63,13 +63,13 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.13-R0.1-SNAPSHOT</version>
+            <version>1.13.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot</artifactId>
-            <version>1.13-R0.1-SNAPSHOT</version>
+            <version>1.13.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
