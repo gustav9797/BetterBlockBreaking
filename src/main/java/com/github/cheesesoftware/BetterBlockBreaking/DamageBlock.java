@@ -171,7 +171,7 @@ public class DamageBlock {
                         f.setAccessible(true);
                         SoundEffect soundEffect = (SoundEffect) f.get(world.getType(pos).getBlock().getStepSound());
 
-                        Field f2 = SoundEffect.class.getDeclaredField("b");
+                        Field f2 = SoundEffect.class.getDeclaredField("a");
                         f2.setAccessible(true);
                         MinecraftKey minecraftKey = (MinecraftKey) f2.get(soundEffect);
 
