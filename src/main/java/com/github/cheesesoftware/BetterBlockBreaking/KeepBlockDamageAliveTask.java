@@ -1,11 +1,11 @@
 package com.github.cheesesoftware.BetterBlockBreaking;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.PacketPlayOutBlockBreakAnimation;
-import net.minecraft.server.v1_13_R2.WorldServer;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.PacketPlayOutBlockBreakAnimation;
+import net.minecraft.server.v1_14_R1.WorldServer;
 
-import org.bukkit.craftbukkit.v1_13_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -28,7 +28,7 @@ public class KeepBlockDamageAliveTask extends BukkitRunnable {
 	if (block.isDamaged() && block.getEntity() != null && ((BetterBlockBreaking)plugin).damageBlocks.containsKey(block.getLocation())) {
 	    float currentDamage = block.getDamage();
 
-	    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(null, block.getX(), block.getY(), block.getZ(), 120, world.dimension,
+	    ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(null, block.getX(), block.getY(), block.getZ(), 120, world.getWorldProvider().getDimensionManager(),
 		    new PacketPlayOutBlockBreakAnimation(block.getEntity().getId(), pos, (int) currentDamage));
 	} else
 	    this.cancel();

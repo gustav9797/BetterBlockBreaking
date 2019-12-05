@@ -2,13 +2,13 @@ package com.github.cheesesoftware.BetterBlockBreaking;
 
 import java.util.Date;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.EntityPlayer;
-import net.minecraft.server.v1_13_R2.IBlockData;
-import net.minecraft.server.v1_13_R2.WorldServer;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.EntityPlayer;
+import net.minecraft.server.v1_14_R1.IBlockData;
+import net.minecraft.server.v1_14_R1.WorldServer;
 
-import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -34,7 +34,7 @@ public class ShowCurrentBlockDamageTask extends BukkitRunnable {
             EntityPlayer player = ((CraftPlayer) p).getHandle();
             BlockPosition pos = new BlockPosition(damageBlock.getX(), damageBlock.getY(), damageBlock.getZ());
             IBlockData blockData = world.getType(pos);
-            net.minecraft.server.v1_13_R2.Block block = blockData.getBlock();
+            net.minecraft.server.v1_14_R1.Block block = blockData.getBlock();
 
             float i = differenceMilliseconds / 20;
             float f = 1000 * ((block.getDamage(blockData, player, world, pos) * (float) (i)) / 240);

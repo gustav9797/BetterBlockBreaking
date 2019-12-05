@@ -13,14 +13,15 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 
-import net.minecraft.server.v1_13_R2.BlockPosition;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.EntityChicken;
-import net.minecraft.server.v1_13_R2.EntityLiving;
-import net.minecraft.server.v1_13_R2.EntityTNTPrimed;
-import net.minecraft.server.v1_13_R2.PacketPlayInBlockDig.EnumPlayerDigType;
-import net.minecraft.server.v1_13_R2.PacketPlayOutBlockBreakAnimation;
-import net.minecraft.server.v1_13_R2.WorldServer;
+import net.minecraft.server.v1_14_R1.BlockPosition;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.EntityChicken;
+import net.minecraft.server.v1_14_R1.EntityLiving;
+import net.minecraft.server.v1_14_R1.EntityTNTPrimed;
+import net.minecraft.server.v1_14_R1.EntityTypes;
+import net.minecraft.server.v1_14_R1.PacketPlayInBlockDig.EnumPlayerDigType;
+import net.minecraft.server.v1_14_R1.PacketPlayOutBlockBreakAnimation;
+import net.minecraft.server.v1_14_R1.WorldServer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -29,9 +30,9 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.craftbukkit.v1_13_R2.CraftServer;
-import org.bukkit.craftbukkit.v1_13_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_14_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_14_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -54,7 +55,13 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.reflect.StructureModifier;
-
+import com.palmergames.bukkit.towny.object.TownyPermission.ActionType;
+import com.palmergames.bukkit.towny.utils.PlayerCacheUtil;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.regions.RegionQuery;
 import me.mrCookieSlime.Slimefun.Objects.SlimefunItem.SlimefunItem;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 
@@ -70,12 +77,14 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
     public Plugin worldGuard = null;
     public Plugin slimefun = null;
+    public Plugin towny = null;
 
     public HashMap<Location, DamageBlock> damageBlocks = new HashMap<Location, DamageBlock>();
 
     public void onEnable() {
         this.worldGuard = this.getWorldGuard();
         this.slimefun = this.getSlimefun();
+        this.towny = this.getTowny();
 
         this.saveDefaultConfig();
         this.reloadCustomConfig();
@@ -108,10 +117,14 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
 
                             Location posLocation = new Location(p.getWorld(), pos.getX(), pos.getY(), pos.getZ());
 
-                            if (worldGuard != null && !((com.sk89q.worldguard.bukkit.WorldGuardPlugin) worldGuard).canBuild(p, posLocation)) {
+                            if (worldGuard != null && !canBreak(p, posLocation)) {
                                 return;
                             }
-
+                            
+                            if (towny != null && !canBreakTowny(p, posLocation.getBlock())) {
+                                return;
+                            }
+                            
                             if (p.getGameMode() == GameMode.SURVIVAL) {
 
                                 DamageBlock damageBlock = damageBlocks.get(posLocation);
@@ -161,14 +174,14 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
                                         WorldServer world = ((CraftWorld) damageBlock.getWorld()).getHandle();
                                         EntityLiving entity = damageBlock.getEntity();
                                         if (entity == null) {
-                                            entity = new EntityChicken(world);
+                                            entity = new EntityChicken(EntityTypes.CHICKEN, world);
                                             world.addEntity(entity, SpawnReason.CUSTOM);
                                             damageBlock.setEntity(entity);
                                         }
 
                                         // Send damage packet
                                         float currentDamage = damageBlock.getDamage();
-                                        ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(null, posLocation.getX(), posLocation.getY(), posLocation.getZ(), 120, world.dimension,
+                                        ((CraftServer) plugin.getServer()).getHandle().sendPacketNearby(null, posLocation.getX(), posLocation.getY(), posLocation.getZ(), 120, world.getWorldProvider().getDimensionManager(),
                                                 new PacketPlayOutBlockBreakAnimation(damageBlock.getEntity().getId(), pos, (int) currentDamage));
 
                                         // Cancel old keep-damage-alive task
@@ -329,6 +342,31 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
     public static BetterBlockBreaking getPlugin() {
         return (BetterBlockBreaking) Bukkit.getPluginManager().getPlugin("BetterBlockBreaking");
     }
+    
+    public boolean canBreak(Player p, Location l) {
+    	if(worldGuard!=null) {
+    		RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
+    		com.sk89q.worldedit.util.Location loc = BukkitAdapter.adapt(l);
+    		if (!hasBypass(p, l)) {
+    			return query.testState(loc, WorldGuardPlugin.inst().wrapPlayer(p), Flags.BLOCK_BREAK);
+    		}else {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+
+    private boolean canBreakTowny(Player player, Block block) {
+    	Plugin plugin = getServer().getPluginManager().getPlugin("Towny");
+    	if(plugin!=null) {
+    		return PlayerCacheUtil.getCachePermission(player, block.getLocation(), block.getType(), ActionType.DESTROY);
+    	}
+    	return true;
+    }
+    
+    public boolean hasBypass(Player p, Location l) {
+        return WorldGuard.getInstance().getPlatform().getSessionManager().hasBypass(WorldGuardPlugin.inst().wrapPlayer(p), BukkitAdapter.adapt(l.getWorld()));
+    }    
 
     private Plugin getWorldGuard() {
         Plugin plugin = getServer().getPluginManager().getPlugin("WorldGuard");
@@ -352,6 +390,19 @@ public class BetterBlockBreaking extends JavaPlugin implements Listener {
             return null; // Maybe you want throw an exception instead
         } else
             getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled Slimefun interaction.");
+
+        return plugin;
+    }
+    
+    private Plugin getTowny() {
+        Plugin plugin = getServer().getPluginManager().getPlugin("Towny");
+
+        // WorldGuard may not be loaded
+        if (plugin == null || !(plugin instanceof com.palmergames.bukkit.towny.Towny)) {
+            getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Towny could not be loaded. Disabling interaction.");
+            return null; // Maybe you want throw an exception instead
+        } else
+            getServer().getLogger().log(Level.INFO, "[BetterBlockBreaking] Enabled Towny interaction.");
 
         return plugin;
     }

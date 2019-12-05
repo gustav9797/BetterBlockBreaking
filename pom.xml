@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.cheesesoftware</groupId>
   <artifactId>BetterBlockBreaking</artifactId>
-  <version>6.6.0-1.13.1</version>
+  <version>6.6.0-1.14.4</version>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <resources>
@@ -53,6 +53,10 @@
                         <id>craftbukkit-repo</id>
                         <url>http://maven.sk89q.com/repo/</url>
                 </repository>
+                <repository>
+                        <id>drkmatr1984-repo</id>
+                        <url>https://minevolt.net/repo/</url>
+                </repository>
             <repository>
                 <id>sk89q-repo</id>
                 <url>http://maven.sk89q.com/repo/</url>
@@ -63,31 +67,36 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.13.1-R0.1-SNAPSHOT</version>
+            <version>1.14.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot</artifactId>
-            <version>1.13.1-R0.1-SNAPSHOT</version>
+            <version>1.14.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.comphenix.protocol</groupId>
-            <artifactId>ProtocolLib-API</artifactId>
-            <version>4.4.0-SNAPSHOT</version>
+            <artifactId>ProtocolLib</artifactId>
+            <version>4.4.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.sk89q</groupId>
-            <artifactId>worldguard</artifactId>
-            <version>6.1.1-SNAPSHOT</version>
+            <groupId>com.sk89q.worldguard</groupId>
+            <artifactId>worldguard-bukkit</artifactId>
+            <version>7.0.2-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.github.TheBusyBiscuit</groupId>
             <artifactId>Slimefun4</artifactId>
             <version>4.1.15</version>
+        </dependency>
+        <dependency>
+            <groupId>com.palmergames.bukkit.towny</groupId>
+            <artifactId>Towny</artifactId>
+            <version>0.95.1.7</version>
         </dependency>
         </dependencies>
 </project>
