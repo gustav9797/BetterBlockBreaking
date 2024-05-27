@@ -1,4 +1,0 @@
-name: BetterBlockBreaking
-main: com.github.cheesesoftware.BetterBlockBreaking.BetterBlockBreaking
-version: 0.3
-depend: [ProtocolLib]
